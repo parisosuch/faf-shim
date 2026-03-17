@@ -12,6 +12,9 @@ wheels/
 # Environment
 .env
 
+# Logs
+logs/
+
 # SQLite
 *.db
 *.db-shm

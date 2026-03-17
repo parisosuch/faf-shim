@@ -2,13 +2,20 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.db import init_db
+from app.logger import setup_logging, get_logger
 from app.routers import auth, shims, webhooks
+
+logger = get_logger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    setup_logging()
+    logger.info("faf-shim starting up")
     init_db()
+    logger.info("database initialised")
     yield
+    logger.info("faf-shim shutting down")
 
 
 app = FastAPI(
