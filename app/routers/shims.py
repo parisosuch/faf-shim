@@ -1,4 +1,7 @@
+from typing import Any
+
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlmodel import Session, select
 
 from app.auth import require_auth
@@ -14,6 +17,7 @@ from app.db import (
     RuleOperator,
     WebhookLog,
 )
+from app.forwarder import evaluate_rules
 
 router = APIRouter(
     prefix="/shims", tags=["shims"], dependencies=[Depends(require_auth)]
@@ -62,6 +66,37 @@ def get_shim(shim_id: int, session: Session = Depends(get_session)):
         select(ShimRule).where(ShimRule.shim_id == shim_id).order_by(ShimRule.order)
     ).all()
     return ShimRead(**shim.model_dump(), rules=rules)
+
+
+class TestPayloadRequest(BaseModel):
+    payload: dict[str, Any]
+
+
+class TestPayloadResponse(BaseModel):
+    matched_rule: ShimRule | None
+    target_url: str
+
+
+@router.post("/{shim_id}/test", response_model=TestPayloadResponse)
+def test_shim(
+    shim_id: int, body: TestPayloadRequest, session: Session = Depends(get_session)
+):
+    shim = session.get(Shim, shim_id)
+    if not shim:
+        raise HTTPException(status_code=404, detail="Shim not found")
+    rules = session.exec(
+        select(ShimRule).where(ShimRule.shim_id == shim_id).order_by(ShimRule.order)
+    ).all()
+    matched_url = evaluate_rules(rules, body.payload)
+    matched_rule = (
+        next((r for r in rules if r.target_url == matched_url), None)
+        if matched_url
+        else None
+    )
+    return TestPayloadResponse(
+        matched_rule=matched_rule,
+        target_url=matched_url or shim.target_url,
+    )
 
 
 @router.patch("/{shim_id}", response_model=ShimRead)
