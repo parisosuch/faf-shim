@@ -76,6 +76,14 @@ uv run fastapi dev app/main.py
 
 The SQLite database (`faf-shim.db`) is created automatically on first run with WAL mode enabled.
 
+### Testing
+
+Tests use an in-memory SQLite database — nothing touches the real `faf-shim.db`.
+
+```bash
+uv run pytest tests/ -v
+```
+
 ---
 
 ## Project Structure
@@ -90,4 +98,9 @@ app/
 └── routers/
     ├── shims.py         # Shim + ShimRule CRUD endpoints
     └── webhooks.py      # Inbound webhook receiver
+tests/
+├── conftest.py          # In-memory DB fixture, TestClient setup
+├── test_shims.py        # Shim CRUD tests
+├── test_rules.py        # ShimRule CRUD tests
+└── test_webhooks.py     # Inbound webhook tests
 ```
