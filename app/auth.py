@@ -22,7 +22,11 @@ def hash_password(plain: str) -> str:
 def create_access_token(subject: str) -> str:
     now = datetime.now(timezone.utc)
     return jwt.encode(
-        {"sub": subject, "iat": now, "exp": now + timedelta(minutes=settings.jwt_expire_minutes)},
+        {
+            "sub": subject,
+            "iat": now,
+            "exp": now + timedelta(minutes=settings.jwt_expire_minutes),
+        },
         settings.jwt_secret,
         algorithm="HS256",
     )

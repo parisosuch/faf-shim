@@ -2,7 +2,9 @@ from fastapi.testclient import TestClient
 
 
 def test_login_success(client: TestClient):
-    r = client.post("/auth/login", json={"username": "admin", "password": "testpassword"})
+    r = client.post(
+        "/auth/login", json={"username": "admin", "password": "testpassword"}
+    )
     assert r.status_code == 200
     data = r.json()
     assert "access_token" in data
@@ -15,7 +17,9 @@ def test_login_wrong_password(client: TestClient):
 
 
 def test_login_wrong_username(client: TestClient):
-    r = client.post("/auth/login", json={"username": "notadmin", "password": "testpassword"})
+    r = client.post(
+        "/auth/login", json={"username": "notadmin", "password": "testpassword"}
+    )
     assert r.status_code == 401
 
 
@@ -42,6 +46,7 @@ def test_me_unauthenticated(client: TestClient):
 
 def test_refresh(client: TestClient, auth_headers):
     import jwt as pyjwt
+
     original_token = auth_headers["Authorization"].split(" ")[1]
 
     r = client.post("/auth/refresh", headers=auth_headers)

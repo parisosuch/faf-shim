@@ -11,7 +11,7 @@ class RuleOperator(str, Enum):
 
 
 class SignatureAlgorithm(str, Enum):
-    token = "token"    # direct header value comparison
+    token = "token"  # direct header value comparison
     sha256 = "sha256"  # HMAC-SHA256 of the request body
 
 

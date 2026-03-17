@@ -22,9 +22,9 @@ def verify_signature(shim: Shim, headers: dict, body: bytes) -> bool:
         return hmac.compare_digest(header_value, shim.secret)
 
     if shim.signature_algorithm == SignatureAlgorithm.sha256:
-        expected = "sha256=" + hmac.new(
-            shim.secret.encode(), body, hashlib.sha256
-        ).hexdigest()
+        expected = (
+            "sha256=" + hmac.new(shim.secret.encode(), body, hashlib.sha256).hexdigest()
+        )
         return hmac.compare_digest(header_value, expected)
 
     return False
