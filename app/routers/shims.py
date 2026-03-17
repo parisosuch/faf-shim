@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
+from app.auth import require_auth
 from app.db import get_session, Shim, ShimCreate, ShimRule, ShimRuleCreate, RuleOperator
 
-router = APIRouter(prefix="/shims", tags=["shims"])
+router = APIRouter(prefix="/shims", tags=["shims"], dependencies=[Depends(require_auth)])
 
 
 @router.get("/operators")

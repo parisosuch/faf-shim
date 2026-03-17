@@ -7,8 +7,8 @@ def test_health(client: TestClient):
     assert r.json() == {"status": "ok"}
 
 
-def test_list_operators(client: TestClient):
-    r = client.get("/shims/operators")
+def test_list_operators(client: TestClient, auth_headers):
+    r = client.get("/shims/operators", headers=auth_headers)
     assert r.status_code == 200
     values = [op["value"] for op in r.json()]
     assert "==" in values
@@ -16,8 +16,13 @@ def test_list_operators(client: TestClient):
     assert "contains" in values
 
 
-def test_create_shim(client: TestClient):
-    r = client.post("/shims/", json={
+def test_unauthenticated_request(client: TestClient):
+    r = client.get("/shims/")
+    assert r.status_code == 401
+
+
+def test_create_shim(client: TestClient, auth_headers):
+    r = client.post("/shims/", headers=auth_headers, json={
         "name": "Test Shim",
         "slug": "test-shim",
         "target_url": "https://example.com/target",
@@ -28,52 +33,51 @@ def test_create_shim(client: TestClient):
     assert data["id"] is not None
 
 
-def test_create_shim_duplicate_slug(client: TestClient):
+def test_create_shim_duplicate_slug(client: TestClient, auth_headers):
     payload = {"name": "Shim", "slug": "my-shim", "target_url": "https://example.com"}
-    client.post("/shims/", json=payload)
-    r = client.post("/shims/", json=payload)
+    client.post("/shims/", headers=auth_headers, json=payload)
+    r = client.post("/shims/", headers=auth_headers, json=payload)
     assert r.status_code == 409
 
 
-def test_list_shims(client: TestClient):
-    client.post("/shims/", json={"name": "A", "slug": "a", "target_url": "https://a.com"})
-    client.post("/shims/", json={"name": "B", "slug": "b", "target_url": "https://b.com"})
-    r = client.get("/shims/")
+def test_list_shims(client: TestClient, auth_headers):
+    client.post("/shims/", headers=auth_headers, json={"name": "A", "slug": "a", "target_url": "https://a.com"})
+    client.post("/shims/", headers=auth_headers, json={"name": "B", "slug": "b", "target_url": "https://b.com"})
+    r = client.get("/shims/", headers=auth_headers)
     assert r.status_code == 200
     assert len(r.json()) == 2
 
 
-def test_get_shim(client: TestClient):
-    created = client.post("/shims/", json={
+def test_get_shim(client: TestClient, auth_headers):
+    created = client.post("/shims/", headers=auth_headers, json={
         "name": "Get Me", "slug": "get-me", "target_url": "https://example.com"
     }).json()
-    r = client.get(f"/shims/{created['id']}")
+    r = client.get(f"/shims/{created['id']}", headers=auth_headers)
     assert r.status_code == 200
     assert r.json()["slug"] == "get-me"
 
 
-def test_get_shim_not_found(client: TestClient):
-    r = client.get("/shims/999")
+def test_get_shim_not_found(client: TestClient, auth_headers):
+    r = client.get("/shims/999", headers=auth_headers)
     assert r.status_code == 404
 
 
-def test_delete_shim(client: TestClient):
-    created = client.post("/shims/", json={
+def test_delete_shim(client: TestClient, auth_headers):
+    created = client.post("/shims/", headers=auth_headers, json={
         "name": "Delete Me", "slug": "delete-me", "target_url": "https://example.com"
     }).json()
-    r = client.delete(f"/shims/{created['id']}")
+    r = client.delete(f"/shims/{created['id']}", headers=auth_headers)
     assert r.status_code == 204
-    assert client.get(f"/shims/{created['id']}").status_code == 404
+    assert client.get(f"/shims/{created['id']}", headers=auth_headers).status_code == 404
 
 
-def test_delete_shim_cascades_rules(client: TestClient):
-    shim = client.post("/shims/", json={
+def test_delete_shim_cascades_rules(client: TestClient, auth_headers):
+    shim = client.post("/shims/", headers=auth_headers, json={
         "name": "Cascade", "slug": "cascade", "target_url": "https://example.com"
     }).json()
-    client.post(f"/shims/{shim['id']}/rules", json={
+    client.post(f"/shims/{shim['id']}/rules", headers=auth_headers, json={
         "field": "status", "operator": "==", "value": "ok", "target_url": "https://a.com"
     })
-    client.delete(f"/shims/{shim['id']}")
-    # shim is gone so rules endpoint should 404
-    r = client.get(f"/shims/{shim['id']}/rules")
+    client.delete(f"/shims/{shim['id']}", headers=auth_headers)
+    r = client.get(f"/shims/{shim['id']}/rules", headers=auth_headers)
     assert r.status_code == 404

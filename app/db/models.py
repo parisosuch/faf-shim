@@ -10,6 +10,11 @@ class RuleOperator(str, Enum):
     contains = "contains"
 
 
+class SignatureAlgorithm(str, Enum):
+    token = "token"    # direct header value comparison
+    sha256 = "sha256"  # HMAC-SHA256 of the request body
+
+
 def _now() -> datetime:
     return datetime.now(timezone.utc)
 
@@ -19,6 +24,9 @@ class ShimBase(SQLModel):
     slug: str
     target_url: str
     headers: str = Field(default="{}")
+    secret: Optional[str] = None
+    signature_header: Optional[str] = None
+    signature_algorithm: Optional[SignatureAlgorithm] = None
 
 
 class Shim(ShimBase, table=True):

@@ -28,15 +28,58 @@ POST /in/coolify-deploy
   Fallback                    → https://logs.example.com/generic
 ```
 
+### Signature Verification
+Each shim can optionally verify incoming request signatures to prevent unauthorized triggering. Two modes are supported:
+
+- **`token`** — compares a header value directly against the stored secret (e.g. Coolify's `X-Coolify-Token`)
+- **`sha256`** — verifies an HMAC-SHA256 signature of the request body (e.g. GitHub's `X-Hub-Signature-256`, Stripe's `Stripe-Signature`)
+
+Configure per shim:
+```json
+{
+  "secret": "your-shared-secret",
+  "signature_header": "X-Hub-Signature-256",
+  "signature_algorithm": "sha256"
+}
+```
+
+If no secret is configured, the shim accepts all traffic. The `/in/{slug}` endpoint always returns `200` regardless of outcome — unknown slugs, missing headers, and invalid signatures are silently dropped with no distinguishable response to prevent enumeration.
+
+---
+
+## Authentication
+
+faf-shim uses JWT bearer tokens. All `/shims/*` management endpoints require authentication. The `/in/{slug}` inbound endpoint and `/health` are public.
+
+Credentials are configured via environment variables. See `.env.example` for setup instructions.
+
+### Generating credentials
+
+```bash
+# Hash a password
+uv run python -c "import bcrypt; print(bcrypt.hashpw(b'yourpassword', bcrypt.gensalt()).decode())"
+
+# Generate a JWT secret
+uv run python -c "import secrets; print(secrets.token_hex(32))"
+```
+
 ---
 
 ## API Reference
+
+### Auth
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/auth/login` | Login with username + password, returns JWT |
+| `GET` | `/auth/me` | Check current session, returns username |
+| `POST` | `/auth/refresh` | Issue a new token from a valid token |
 
 ### Webhooks
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `POST` | `/in/{slug}` | Receive an inbound webhook |
+| `POST` | `/in/{slug}` | Receive an inbound webhook (public) |
 
 ### Shims
 
@@ -70,6 +113,8 @@ Interactive API docs available at `/docs` when running locally.
 ### Setup
 
 ```bash
+cp .env.example .env
+# Fill in ADMIN_PASSWORD_HASH and JWT_SECRET in .env
 uv sync
 uv run fastapi dev app/main.py
 ```
@@ -91,16 +136,21 @@ uv run pytest tests/ -v
 ```
 app/
 ├── main.py              # FastAPI app, lifespan, router registration
+├── auth.py              # JWT creation/validation, bcrypt password hashing
+├── config.py            # Settings loaded from environment via pydantic-settings
+├── signing.py           # Webhook signature verification (token + HMAC-SHA256)
 ├── db/
 │   ├── __init__.py      # Package exports
 │   ├── engine.py        # SQLite engine, session dependency, DB init
 │   └── models.py        # SQLModel table definitions and request schemas
 └── routers/
+    ├── auth.py          # Login, session check, token refresh
     ├── shims.py         # Shim + ShimRule CRUD endpoints
     └── webhooks.py      # Inbound webhook receiver
 tests/
-├── conftest.py          # In-memory DB fixture, TestClient setup
+├── conftest.py          # In-memory DB fixture, TestClient + auth setup
+├── test_auth.py         # Login, session, refresh, protection tests
 ├── test_shims.py        # Shim CRUD tests
 ├── test_rules.py        # ShimRule CRUD tests
-└── test_webhooks.py     # Inbound webhook tests
+└── test_webhooks.py     # Inbound webhook + signature verification tests
 ```

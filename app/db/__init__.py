@@ -5,6 +5,7 @@ from app.db.models import (
     ShimRule,
     ShimRuleCreate,
     RuleOperator,
+    SignatureAlgorithm,
     WebhookLog,
 )
 from app.db.engine import engine, init_db, get_session
@@ -15,6 +16,7 @@ __all__ = [
     "ShimRule",
     "ShimRuleCreate",
     "RuleOperator",
+    "SignatureAlgorithm",
     "WebhookLog",
     "engine",
     "init_db",
