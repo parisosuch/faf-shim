@@ -12,7 +12,7 @@ logger = get_logger(__name__)
 async def lifespan(_app: FastAPI):
     setup_logging()
     logger.info("faf-shim starting up")
-    init_db()
+    await init_db()
     logger.info("database initialised")
     yield
     logger.info("faf-shim shutting down")

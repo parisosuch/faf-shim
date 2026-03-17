@@ -8,11 +8,14 @@ os.environ.setdefault(
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlmodel import SQLModel, Session, create_engine
-from sqlmodel.pool import StaticPool
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+from sqlalchemy.pool import StaticPool
+from sqlmodel import SQLModel
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.main import app
 from app.db import get_session
+from app import cache
 from app.auth import create_access_token, hash_password
 from app.config import settings
 
@@ -27,26 +30,34 @@ def patch_settings():
 
 
 @pytest.fixture(name="session")
-def session_fixture():
-    engine = create_engine(
-        "sqlite://",
+async def session_fixture():
+    engine = create_async_engine(
+        "sqlite+aiosqlite://",
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
-    SQLModel.metadata.create_all(engine)
-    with Session(engine) as session:
+    async with engine.begin() as conn:
+        await conn.run_sync(SQLModel.metadata.create_all)
+    async_session = async_sessionmaker(
+        engine, class_=AsyncSession, expire_on_commit=False
+    )
+    async with async_session() as session:
         yield session
-    SQLModel.metadata.drop_all(engine)
+    async with engine.begin() as conn:
+        await conn.run_sync(SQLModel.metadata.drop_all)
+    await engine.dispose()
 
 
 @pytest.fixture(name="client")
-def client_fixture(session: Session):
-    def override_get_session():
+async def client_fixture(session: AsyncSession):
+    async def override_get_session():
         yield session
 
     app.dependency_overrides[get_session] = override_get_session
-    yield TestClient(app)
+    with TestClient(app) as c:
+        yield c
     app.dependency_overrides.clear()
+    cache.clear()
 
 
 @pytest.fixture(name="auth_headers")

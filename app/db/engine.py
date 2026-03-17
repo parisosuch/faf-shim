@@ -1,22 +1,24 @@
-from collections.abc import Generator
-from sqlmodel import SQLModel, Session, create_engine, text
+from collections.abc import AsyncGenerator
 
-DATABASE_URL = "sqlite:///faf-shim.db"
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+from sqlmodel import SQLModel, text
+from sqlmodel.ext.asyncio.session import AsyncSession
 
-engine = create_engine(
-    DATABASE_URL,
-    connect_args={"check_same_thread": False},
+DATABASE_URL = "sqlite+aiosqlite:///faf-shim.db"
+
+engine = create_async_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+
+AsyncSessionLocal = async_sessionmaker(
+    engine, class_=AsyncSession, expire_on_commit=False
 )
 
 
-def init_db():
-    # Enable WAL mode for better concurrent read performance
-    with engine.connect() as conn:
-        conn.execute(text("PRAGMA journal_mode=WAL"))
-
-    SQLModel.metadata.create_all(engine)
+async def init_db() -> None:
+    async with engine.begin() as conn:
+        await conn.execute(text("PRAGMA journal_mode=WAL"))
+        await conn.run_sync(SQLModel.metadata.create_all)
 
 
-def get_session() -> Generator[Session, None, None]:
-    with Session(engine) as session:
+async def get_session() -> AsyncGenerator[AsyncSession, None]:
+    async with AsyncSessionLocal() as session:
         yield session

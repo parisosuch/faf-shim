@@ -11,7 +11,7 @@ from app.db.models import (
     SignatureAlgorithm,
     WebhookLog,
 )
-from app.db.engine import engine, init_db, get_session
+from app.db.engine import engine, init_db, get_session, AsyncSessionLocal
 
 __all__ = [
     "Shim",
@@ -27,4 +27,5 @@ __all__ = [
     "engine",
     "init_db",
     "get_session",
+    "AsyncSessionLocal",
 ]
