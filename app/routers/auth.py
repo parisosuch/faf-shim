@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
-from app.auth import create_access_token, decode_token, require_auth, verify_password
+from app.auth import create_access_token, require_auth, verify_password
 from app.config import settings
 
 router = APIRouter(prefix="/auth", tags=["auth"])
