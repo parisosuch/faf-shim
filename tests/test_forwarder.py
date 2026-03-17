@@ -3,7 +3,12 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from fastapi.testclient import TestClient
 
-from app.forwarder import evaluate_rules, parse_body
+from app.forwarder import (
+    evaluate_rules,
+    find_matching_rule,
+    parse_body,
+    render_template,
+)
 from app.db.models import ShimRule, RuleOperator
 
 
@@ -69,6 +74,57 @@ def test_evaluate_rules_nested_field():
 def test_evaluate_rules_missing_field_skipped():
     rules = [_rule("missing.field", RuleOperator.eq, "x", "https://x.com")]
     assert evaluate_rules(rules, {"status": "ok"}) is None
+
+
+# --- Unit tests for find_matching_rule ---
+
+
+def test_find_matching_rule_returns_rule_object():
+    rule = _rule("status", RuleOperator.eq, "failed", "https://alerts.com")
+    result = find_matching_rule([rule], {"status": "failed"})
+    assert result is rule
+
+
+def test_find_matching_rule_no_match():
+    rule = _rule("status", RuleOperator.eq, "failed", "https://alerts.com")
+    assert find_matching_rule([rule], {"status": "ok"}) is None
+
+
+def test_find_matching_rule_empty_rules():
+    assert find_matching_rule([], {"status": "ok"}) is None
+
+
+def test_evaluate_rules_delegates_to_find_matching_rule():
+    rule = _rule("status", RuleOperator.eq, "failed", "https://alerts.com")
+    assert evaluate_rules([rule], {"status": "failed"}) == "https://alerts.com"
+
+
+# --- Unit tests for render_template ---
+
+
+def test_render_template_basic():
+    result = render_template('{"event": "{{ payload.type }}"}', {"type": "push"}, {})
+    assert result == b'{"event": "push"}'
+
+
+def test_render_template_with_variables():
+    result = render_template('{"key": "{{ vars.API_KEY }}"}', {}, {"API_KEY": "secret"})
+    assert result == b'{"key": "secret"}'
+
+
+def test_render_template_static_value():
+    result = render_template('{"project": "Cove"}', {}, {})
+    assert result == b'{"project": "Cove"}'
+
+
+def test_render_template_undefined_variable_raises():
+    with pytest.raises(ValueError, match="Template render error"):
+        render_template("{{ vars.MISSING }}", {}, {})
+
+
+def test_render_template_returns_bytes():
+    result = render_template("hello", {}, {})
+    assert isinstance(result, bytes)
 
 
 def test_parse_body_valid_json():

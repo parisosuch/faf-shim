@@ -27,6 +27,8 @@ class ShimBase(SQLModel):
     secret: Optional[str] = None
     signature_header: Optional[str] = None
     signature_algorithm: Optional[SignatureAlgorithm] = None
+    body_template: Optional[str] = None
+    sample_payload: Optional[str] = None
 
 
 class Shim(ShimBase, table=True):
@@ -47,12 +49,27 @@ class ShimUpdate(SQLModel):
     secret: Optional[str] = None
     signature_header: Optional[str] = None
     signature_algorithm: Optional[SignatureAlgorithm] = None
+    body_template: Optional[str] = None
+    sample_payload: Optional[str] = None
 
 
-class ShimRead(ShimBase):
-    id: int
-    created_at: datetime
-    rules: list["ShimRule"] = []
+class ShimVariable(SQLModel, table=True):
+    __tablename__ = "shim_variable"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    shim_id: int = Field(foreign_key="shim.id", index=True)
+    key: str
+    value: str
+
+
+class ShimVariableCreate(SQLModel):
+    key: str
+    value: str
+
+
+class ShimVariableUpdate(SQLModel):
+    key: Optional[str] = None
+    value: Optional[str] = None
 
 
 class ShimRuleBase(SQLModel):
@@ -61,6 +78,7 @@ class ShimRuleBase(SQLModel):
     operator: RuleOperator
     value: str
     target_url: str
+    body_template: Optional[str] = None
 
 
 class ShimRule(ShimRuleBase, table=True):
@@ -80,6 +98,14 @@ class ShimRuleUpdate(SQLModel):
     operator: Optional[RuleOperator] = None
     value: Optional[str] = None
     target_url: Optional[str] = None
+    body_template: Optional[str] = None
+
+
+class ShimRead(ShimBase):
+    id: int
+    created_at: datetime
+    rules: list["ShimRule"] = []
+    variables: list["ShimVariable"] = []
 
 
 class WebhookLog(SQLModel, table=True):

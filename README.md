@@ -1,8 +1,8 @@
 # faf-shim
 
-A lightweight, self-hostable webhook shim. Point any service at faf-shim, define routing rules, and forward payloads to the right destination — no code required.
+A lightweight, self-hostable webhook shim. Point any service at faf-shim, define routing rules, transform payloads, and forward to the right destination — no code required.
 
-**Stack:** FastAPI · SQLite (WAL mode) · Astro (UI, coming soon)
+**Stack:** FastAPI · SQLite (WAL mode, async via aiosqlite) · Astro (UI, coming soon)
 
 ---
 
@@ -19,6 +19,7 @@ Each rule defines:
 - `operator` — `==`, `!=`, or `contains`
 - `value` — the value to compare against
 - `target_url` — where to forward if the rule matches
+- `body_template` *(optional)* — Jinja2 template for the outgoing body when this rule fires
 
 **Example:** A Coolify shim with two rules:
 ```
@@ -26,6 +27,39 @@ POST /in/coolify-deploy
   Rule 1: status == "failed"  → https://pagerduty.example.com/...
   Rule 2: status == "success" → https://hooks.slack.com/...
   Fallback                    → https://logs.example.com/generic
+```
+
+### Body Templates
+Each shim (and each rule) can define a **Jinja2 body template** that transforms the incoming payload into the shape expected by the target API. When a template is set on a matched rule it takes precedence over the shim-level template; when no template is configured the raw request body is forwarded unchanged.
+
+Template context:
+- `payload` — the parsed incoming JSON body
+- `vars` — the shim's stored variables (see below)
+
+**Example** — transform a Coolify deployment event into a Beaver notification:
+```json
+{
+  "project": "Cove",
+  "channel": "deployments",
+  "title": "{{ payload.resource.name }} deployment {{ payload.status }}",
+  "description": "{{ payload.message }}",
+  "emoji": "🚀",
+  "api_key": "{{ vars.BEAVER_API_KEY }}"
+}
+```
+
+If the template references an undefined variable the forward is skipped, an error is written to the log, and the inbound caller still receives `200`.
+
+### Variables
+Variables are named key/value pairs stored per shim. They are available inside body templates and header templates via `{{ vars.KEY_NAME }}`. Use them to store API keys, static channel names, or any other configuration that shouldn't be hardcoded in a template.
+
+Variables are returned as part of `GET /shims/{id}` and can be managed via the `/variables` sub-resource.
+
+### Headers
+The `headers` field on a shim is a JSON object of static HTTP headers sent with every forwarded request. Header values are also rendered as Jinja2 templates, so API keys can be injected from variables:
+
+```json
+{"Authorization": "Bearer {{ vars.TARGET_API_KEY }}"}
 ```
 
 ### Signature Verification
@@ -44,6 +78,9 @@ Configure per shim:
 ```
 
 If no secret is configured, the shim accepts all traffic. The `/in/{slug}` endpoint always returns `200` regardless of outcome — unknown slugs, missing headers, and invalid signatures are silently dropped with no distinguishable response to prevent enumeration.
+
+### Sample Payload
+The optional `sample_payload` field stores an example incoming payload for a shim. It has no effect on forwarding — it exists as a hint for UIs building template editors and autocomplete.
 
 ---
 
@@ -85,13 +122,22 @@ uv run python -c "import secrets; print(secrets.token_hex(32))"
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/shims/` | List all shims |
+| `GET` | `/shims/` | List all shims (includes rules and variables) |
 | `POST` | `/shims/` | Create a shim |
-| `GET` | `/shims/{id}` | Get a shim |
-| `DELETE` | `/shims/{id}` | Delete a shim and its rules |
+| `GET` | `/shims/{id}` | Get a shim with its rules and variables |
+| `PATCH` | `/shims/{id}` | Update a shim |
+| `DELETE` | `/shims/{id}` | Delete a shim, its rules, and its variables |
 | `GET` | `/shims/{id}/rules` | List rules for a shim (ordered) |
 | `POST` | `/shims/{id}/rules` | Add a rule to a shim |
+| `PATCH` | `/shims/{id}/rules/{rule_id}` | Update a rule |
 | `DELETE` | `/shims/{id}/rules/{rule_id}` | Delete a rule |
+| `GET` | `/shims/{id}/variables` | List variables for a shim |
+| `POST` | `/shims/{id}/variables` | Add a variable to a shim |
+| `PATCH` | `/shims/{id}/variables/{var_id}` | Update a variable |
+| `DELETE` | `/shims/{id}/variables/{var_id}` | Delete a variable |
+| `POST` | `/shims/{id}/test` | Dry-run: evaluate rules and render templates against a sample payload |
+| `GET` | `/shims/{id}/logs` | Retrieve webhook logs (paginated) |
+| `GET` | `/shims/{id}/logs/{log_id}` | Get a single log entry |
 | `GET` | `/shims/operators` | List valid rule operators |
 
 ### System
@@ -101,6 +147,21 @@ uv run python -c "import secrets; print(secrets.token_hex(32))"
 | `GET` | `/health` | Health check |
 
 Interactive API docs available at `/docs` when running locally.
+
+### Test dry-run response
+
+`POST /shims/{id}/test` accepts `{"payload": {...}}` and returns:
+
+```json
+{
+  "matched_rule": { ... } | null,
+  "target_url": "https://...",
+  "rendered_body": "{ \"title\": \"...\" }" | null,
+  "rendered_headers": { "Authorization": "Bearer ..." } | null
+}
+```
+
+`rendered_body` and `rendered_headers` are `null` when no template / non-default headers are configured. On template error, `rendered_body` contains the error message string.
 
 ---
 
@@ -137,20 +198,28 @@ uv run pytest tests/ -v
 app/
 ├── main.py              # FastAPI app, lifespan, router registration
 ├── auth.py              # JWT creation/validation, bcrypt password hashing
+├── cache.py             # In-memory slug→(shim, rules, variables) cache
 ├── config.py            # Settings loaded from environment via pydantic-settings
+├── forwarder.py         # Rule evaluation, template rendering, HTTP forwarding
 ├── signing.py           # Webhook signature verification (token + HMAC-SHA256)
 ├── db/
 │   ├── __init__.py      # Package exports
-│   ├── engine.py        # SQLite engine, session dependency, DB init
-│   └── models.py        # SQLModel table definitions and request schemas
+│   ├── engine.py        # Async SQLite engine, session dependency, DB init
+│   └── models.py        # SQLModel table definitions and request/response schemas
 └── routers/
     ├── auth.py          # Login, session check, token refresh
-    ├── shims.py         # Shim + ShimRule CRUD endpoints
-    └── webhooks.py      # Inbound webhook receiver
+    ├── shims.py         # Shim, ShimRule, ShimVariable CRUD + test dry-run + logs
+    └── webhooks.py      # Inbound webhook receiver (background forwarding)
 tests/
-├── conftest.py          # In-memory DB fixture, TestClient + auth setup
+├── conftest.py          # In-memory async DB fixture, TestClient + auth setup
 ├── test_auth.py         # Login, session, refresh, protection tests
-├── test_shims.py        # Shim CRUD tests
+├── test_forwarder.py    # Rule evaluation, find_matching_rule, render_template unit tests
+├── test_logs.py         # Webhook log retrieval and pagination tests
 ├── test_rules.py        # ShimRule CRUD tests
+├── test_shim_test.py    # Dry-run endpoint tests
+├── test_shims.py        # Shim CRUD tests
+├── test_templates.py    # Body/header template rendering integration tests
+├── test_updates.py      # PATCH shim and rule tests
+├── test_variables.py    # ShimVariable CRUD and cache invalidation tests
 └── test_webhooks.py     # Inbound webhook + signature verification tests
 ```
