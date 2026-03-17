@@ -39,6 +39,12 @@ class ShimCreate(ShimBase):
     pass
 
 
+class ShimRead(ShimBase):
+    id: int
+    created_at: datetime
+    rules: list["ShimRule"] = []
+
+
 class ShimRuleBase(SQLModel):
     order: int = Field(default=0)
     field: str

@@ -2,7 +2,15 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
 from app.auth import require_auth
-from app.db import get_session, Shim, ShimCreate, ShimRule, ShimRuleCreate, RuleOperator
+from app.db import (
+    get_session,
+    Shim,
+    ShimCreate,
+    ShimRead,
+    ShimRule,
+    ShimRuleCreate,
+    RuleOperator,
+)
 
 router = APIRouter(
     prefix="/shims", tags=["shims"], dependencies=[Depends(require_auth)]
@@ -14,12 +22,23 @@ def list_operators():
     return [{"value": op.value, "label": op.name} for op in RuleOperator]
 
 
-@router.get("/", response_model=list[Shim])
+@router.get("/", response_model=list[ShimRead])
 def list_shims(session: Session = Depends(get_session)):
-    return session.exec(select(Shim)).all()
+    shims = session.exec(select(Shim)).all()
+    return [
+        ShimRead(
+            **shim.model_dump(),
+            rules=session.exec(
+                select(ShimRule)
+                .where(ShimRule.shim_id == shim.id)
+                .order_by(ShimRule.order)
+            ).all(),
+        )
+        for shim in shims
+    ]
 
 
-@router.post("/", response_model=Shim, status_code=201)
+@router.post("/", response_model=ShimRead, status_code=201)
 def create_shim(body: ShimCreate, session: Session = Depends(get_session)):
     existing = session.exec(select(Shim).where(Shim.slug == body.slug)).first()
     if existing:
@@ -28,15 +47,18 @@ def create_shim(body: ShimCreate, session: Session = Depends(get_session)):
     session.add(shim)
     session.commit()
     session.refresh(shim)
-    return shim
+    return ShimRead(**shim.model_dump(), rules=[])
 
 
-@router.get("/{shim_id}", response_model=Shim)
+@router.get("/{shim_id}", response_model=ShimRead)
 def get_shim(shim_id: int, session: Session = Depends(get_session)):
     shim = session.get(Shim, shim_id)
     if not shim:
         raise HTTPException(status_code=404, detail="Shim not found")
-    return shim
+    rules = session.exec(
+        select(ShimRule).where(ShimRule.shim_id == shim_id).order_by(ShimRule.order)
+    ).all()
+    return ShimRead(**shim.model_dump(), rules=rules)
 
 
 @router.delete("/{shim_id}", status_code=204)

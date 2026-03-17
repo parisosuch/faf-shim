@@ -66,9 +66,48 @@ def test_get_shim(client: TestClient, auth_headers):
         headers=auth_headers,
         json={"name": "Get Me", "slug": "get-me", "target_url": "https://example.com"},
     ).json()
+    client.post(
+        f"/shims/{created['id']}/rules",
+        headers=auth_headers,
+        json={
+            "field": "status",
+            "operator": "==",
+            "value": "ok",
+            "target_url": "https://a.com",
+        },
+    )
     r = client.get(f"/shims/{created['id']}", headers=auth_headers)
     assert r.status_code == 200
-    assert r.json()["slug"] == "get-me"
+    data = r.json()
+    assert data["slug"] == "get-me"
+    assert len(data["rules"]) == 1
+    assert data["rules"][0]["field"] == "status"
+
+
+def test_list_shims_includes_rules(client: TestClient, auth_headers):
+    shim = client.post(
+        "/shims/",
+        headers=auth_headers,
+        json={
+            "name": "With Rules",
+            "slug": "with-rules",
+            "target_url": "https://example.com",
+        },
+    ).json()
+    client.post(
+        f"/shims/{shim['id']}/rules",
+        headers=auth_headers,
+        json={
+            "field": "event",
+            "operator": "==",
+            "value": "push",
+            "target_url": "https://b.com",
+        },
+    )
+    r = client.get("/shims/", headers=auth_headers)
+    assert r.status_code == 200
+    match = next(s for s in r.json() if s["slug"] == "with-rules")
+    assert len(match["rules"]) == 1
 
 
 def test_get_shim_not_found(client: TestClient, auth_headers):
