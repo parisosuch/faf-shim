@@ -7,8 +7,10 @@ from app.db import (
     Shim,
     ShimCreate,
     ShimRead,
+    ShimUpdate,
     ShimRule,
     ShimRuleCreate,
+    ShimRuleUpdate,
     RuleOperator,
     WebhookLog,
 )
@@ -62,6 +64,28 @@ def get_shim(shim_id: int, session: Session = Depends(get_session)):
     return ShimRead(**shim.model_dump(), rules=rules)
 
 
+@router.patch("/{shim_id}", response_model=ShimRead)
+def update_shim(
+    shim_id: int, body: ShimUpdate, session: Session = Depends(get_session)
+):
+    shim = session.get(Shim, shim_id)
+    if not shim:
+        raise HTTPException(status_code=404, detail="Shim not found")
+    if body.slug and body.slug != shim.slug:
+        existing = session.exec(select(Shim).where(Shim.slug == body.slug)).first()
+        if existing:
+            raise HTTPException(status_code=409, detail="Slug already in use")
+    for field, val in body.model_dump(exclude_unset=True).items():
+        setattr(shim, field, val)
+    session.add(shim)
+    session.commit()
+    session.refresh(shim)
+    rules = session.exec(
+        select(ShimRule).where(ShimRule.shim_id == shim_id).order_by(ShimRule.order)
+    ).all()
+    return ShimRead(**shim.model_dump(), rules=rules)
+
+
 @router.delete("/{shim_id}", status_code=204)
 def delete_shim(shim_id: int, session: Session = Depends(get_session)):
     shim = session.get(Shim, shim_id)
@@ -91,6 +115,24 @@ def create_rule(
     if not session.get(Shim, shim_id):
         raise HTTPException(status_code=404, detail="Shim not found")
     rule = ShimRule.model_validate(body, update={"shim_id": shim_id})
+    session.add(rule)
+    session.commit()
+    session.refresh(rule)
+    return rule
+
+
+@router.patch("/{shim_id}/rules/{rule_id}", response_model=ShimRule)
+def update_rule(
+    shim_id: int,
+    rule_id: int,
+    body: ShimRuleUpdate,
+    session: Session = Depends(get_session),
+):
+    rule = session.get(ShimRule, rule_id)
+    if not rule or rule.shim_id != shim_id:
+        raise HTTPException(status_code=404, detail="Rule not found")
+    for field, val in body.model_dump(exclude_unset=True).items():
+        setattr(rule, field, val)
     session.add(rule)
     session.commit()
     session.refresh(rule)

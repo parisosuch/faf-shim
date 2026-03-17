@@ -39,6 +39,16 @@ class ShimCreate(ShimBase):
     pass
 
 
+class ShimUpdate(SQLModel):
+    name: Optional[str] = None
+    slug: Optional[str] = None
+    target_url: Optional[str] = None
+    headers: Optional[str] = None
+    secret: Optional[str] = None
+    signature_header: Optional[str] = None
+    signature_algorithm: Optional[SignatureAlgorithm] = None
+
+
 class ShimRead(ShimBase):
     id: int
     created_at: datetime
@@ -62,6 +72,14 @@ class ShimRule(ShimRuleBase, table=True):
 
 class ShimRuleCreate(ShimRuleBase):
     pass
+
+
+class ShimRuleUpdate(SQLModel):
+    order: Optional[int] = None
+    field: Optional[str] = None
+    operator: Optional[RuleOperator] = None
+    value: Optional[str] = None
+    target_url: Optional[str] = None
 
 
 class WebhookLog(SQLModel, table=True):
