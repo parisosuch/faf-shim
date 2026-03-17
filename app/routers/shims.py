@@ -10,6 +10,7 @@ from app.db import (
     ShimRule,
     ShimRuleCreate,
     RuleOperator,
+    WebhookLog,
 )
 
 router = APIRouter(
@@ -103,3 +104,29 @@ def delete_rule(shim_id: int, rule_id: int, session: Session = Depends(get_sessi
         raise HTTPException(status_code=404, detail="Rule not found")
     session.delete(rule)
     session.commit()
+
+
+@router.get("/{shim_id}/logs", response_model=list[WebhookLog])
+def list_logs(
+    shim_id: int,
+    limit: int = 50,
+    offset: int = 0,
+    session: Session = Depends(get_session),
+):
+    if not session.get(Shim, shim_id):
+        raise HTTPException(status_code=404, detail="Shim not found")
+    return session.exec(
+        select(WebhookLog)
+        .where(WebhookLog.shim_id == shim_id)
+        .order_by(WebhookLog.received_at.desc())
+        .offset(offset)
+        .limit(limit)
+    ).all()
+
+
+@router.get("/{shim_id}/logs/{log_id}", response_model=WebhookLog)
+def get_log(shim_id: int, log_id: int, session: Session = Depends(get_session)):
+    log = session.get(WebhookLog, log_id)
+    if not log or log.shim_id != shim_id:
+        raise HTTPException(status_code=404, detail="Log not found")
+    return log

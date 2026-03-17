@@ -39,7 +39,11 @@ async def receive_webhook(
     status_code, error = await forward(target_url, body, shim_headers)
 
     log = WebhookLog(
-        shim_id=shim.id, payload=body.decode(), status=status_code, error=error
+        shim_id=shim.id,
+        payload=body.decode(),
+        target_url=target_url,
+        status=status_code,
+        error=error,
     )
     session.add(log)
     session.commit()

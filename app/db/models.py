@@ -71,5 +71,6 @@ class WebhookLog(SQLModel, table=True):
     shim_id: int = Field(foreign_key="shim.id", index=True)
     received_at: datetime = Field(default_factory=_now)
     payload: str = Field(default="{}")  # raw JSON body
+    target_url: Optional[str] = None  # where the payload was forwarded
     status: Optional[int] = None  # HTTP status returned by target
     error: Optional[str] = None
