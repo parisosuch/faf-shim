@@ -15,7 +15,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.main import app
 from app.db import get_session
-from app import cache
+from app import cache, rate_limit
 from app.auth import create_access_token, hash_password
 from app.config import settings
 
@@ -58,6 +58,7 @@ async def client_fixture(session: AsyncSession):
         yield c
     app.dependency_overrides.clear()
     cache.clear()
+    rate_limit.clear()
 
 
 @pytest.fixture(name="auth_headers")

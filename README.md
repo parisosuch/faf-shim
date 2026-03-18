@@ -98,8 +98,8 @@ Per-shim overrides can be set when creating or updating a shim:
 |-------|-------------|
 | `max_body_size_kb` | Override the global body size limit for this shim (must be ≤ global to have any effect). |
 | `log_retention_days` | Override log retention for this shim. `0` = keep forever. |
-| `rate_limit_requests` | Max requests allowed per window (reserved for rate limiting, not yet enforced). |
-| `rate_limit_window_seconds` | Window size for rate limiting (reserved, not yet enforced). |
+| `rate_limit_requests` | Max requests allowed per window. Requests over the limit receive `429`. |
+| `rate_limit_window_seconds` | Fixed window size in seconds for rate limiting. |
 
 ---
 
@@ -225,6 +225,7 @@ app/
 ├── main.py              # FastAPI app, lifespan, CORS middleware, router registration
 ├── app_config.py        # In-memory singleton for AppConfig (avoids DB hit on hot paths)
 ├── cleanup.py           # Background task that deletes expired webhook logs
+├── rate_limit.py        # In-memory fixed-window rate limiter, keyed by shim slug
 ├── auth.py              # JWT creation/validation, bcrypt password hashing
 ├── cache.py             # In-memory slug→(shim, rules, variables) cache
 ├── config.py            # Settings loaded from environment via pydantic-settings
@@ -255,5 +256,6 @@ tests/
 ├── test_templates.py    # Body/header template rendering integration tests
 ├── test_updates.py      # PATCH shim and rule tests
 ├── test_variables.py    # ShimVariable CRUD and cache invalidation tests
+├── test_rate_limit.py   # Rate limiting enforcement tests
 └── test_webhooks.py     # Inbound webhook + signature verification tests
 ```

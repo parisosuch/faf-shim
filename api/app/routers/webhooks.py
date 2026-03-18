@@ -1,9 +1,10 @@
-from fastapi import APIRouter, BackgroundTasks, Depends, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app import app_config as _app_config
 from app import cache
+from app import rate_limit
 from app.db import get_session, Shim, ShimRule, ShimVariable, WebhookLog
 from app.forwarder import (
     find_matching_rule,
@@ -114,6 +115,14 @@ async def receive_webhook(
             ).all()
         )
         cache.set(slug, shim, rules, variables)
+
+    # Rate limiting — checked before signature verification
+    if shim.rate_limit_requests and shim.rate_limit_window_seconds:
+        if not rate_limit.is_allowed(
+            slug, shim.rate_limit_requests, shim.rate_limit_window_seconds
+        ):
+            logger.warning("slug=%s rate limit exceeded", slug)
+            raise HTTPException(status_code=429, detail="Rate limit exceeded")
 
     # Per-shim body size override (must be ≤ global limit to have any effect)
     if shim.max_body_size_kb is not None and len(body) > shim.max_body_size_kb * 1024:
