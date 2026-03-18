@@ -159,6 +159,37 @@ uv run python -c "import secrets; print(secrets.token_hex(32))"
 | `GET` | `/shims/{id}/logs/{log_id}` | Get a single log entry |
 | `GET` | `/shims/operators` | List valid rule operators |
 
+### Metrics
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/metrics/` | Aggregate stats and time-series buckets per shim and globally |
+
+**Query parameters:**
+
+| Param | Values | Default | Description |
+|-------|--------|---------|-------------|
+| `bucket` | `hour` \| `day` \| `week` \| `month` | `day` | Time bucket size |
+| `range` | integer ≥ 1 | `30` | Number of buckets to return |
+
+**Response shape:**
+```json
+{
+  "global": {
+    "total_requests": 1234, "successful_forwards": 1100, "failed_forwards": 134,
+    "avg_duration_ms": 245.3, "cache_hits": 890, "cache_misses": 344,
+    "buckets": [{"bucket": "2026-03-17", "requests": 45, "successful_forwards": 40, "failed_forwards": 5, "avg_duration_ms": 210.5}]
+  },
+  "shims": [
+    {"shim_id": 1, "slug": "coolify", "name": "Coolify", "total_requests": 500,
+     "successful_forwards": 480, "failed_forwards": 20, "avg_duration_ms": 180.2,
+     "last_triggered_at": "2026-03-17T12:00:00", "buckets": [...]}
+  ]
+}
+```
+
+Aggregate totals are derived from persisted `webhook_log` rows — no extra writes on the hot path. Cache hit/miss counters are in-memory and reset on restart.
+
 ### Config
 
 | Method | Path | Description |
@@ -238,6 +269,7 @@ app/
 └── routers/
     ├── auth.py          # Login, session check, token refresh
     ├── config.py        # GET/PATCH /config — application-wide settings
+    ├── metrics.py       # GET /metrics/ — aggregate stats and time-series buckets
     ├── shims.py         # Shim, ShimRule, ShimVariable CRUD + test dry-run + logs
     └── webhooks.py      # Inbound webhook receiver (background forwarding)
 tests/
@@ -256,6 +288,7 @@ tests/
 ├── test_templates.py    # Body/header template rendering integration tests
 ├── test_updates.py      # PATCH shim and rule tests
 ├── test_variables.py    # ShimVariable CRUD and cache invalidation tests
+├── test_metrics.py      # Metrics endpoint and bucketing tests
 ├── test_rate_limit.py   # Rate limiting enforcement tests
 └── test_webhooks.py     # Inbound webhook + signature verification tests
 ```

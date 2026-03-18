@@ -127,6 +127,7 @@ class WebhookLog(SQLModel, table=True):
     payload: str = Field(default="{}")  # raw JSON body
     target_url: Optional[str] = None  # where the payload was forwarded
     status: Optional[int] = None  # HTTP status returned by target
+    duration_ms: Optional[int] = None  # forward round-trip time in milliseconds
     error: Optional[str] = None
 
 

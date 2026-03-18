@@ -1,3 +1,5 @@
+import time
+
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -50,7 +52,9 @@ async def _forward_and_log(
         await session.commit()
         return
 
+    t0 = time.monotonic()
     status_code, error = await forward(target_url, forward_body, shim_headers)
+    duration_ms = int((time.monotonic() - t0) * 1000)
     if error:
         logger.error("slug=%s forward error: %s", slug, error)
     else:
@@ -60,6 +64,7 @@ async def _forward_and_log(
         payload=raw_body.decode(),
         target_url=target_url,
         status=status_code,
+        duration_ms=duration_ms,
         error=error,
     )
     session.add(log)
