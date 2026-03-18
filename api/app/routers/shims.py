@@ -1,3 +1,4 @@
+from datetime import timedelta
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -5,6 +6,7 @@ from pydantic import BaseModel
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from app import app_config as _app_config
 from app import cache
 from app.auth import require_auth
 from app.db import (
@@ -22,6 +24,7 @@ from app.db import (
     RuleOperator,
     WebhookLog,
 )
+from app.db.models import _now
 from app.forwarder import find_matching_rule, render_headers, render_template
 
 router = APIRouter(
@@ -354,15 +357,25 @@ async def list_logs(
     offset: int = 0,
     session: AsyncSession = Depends(get_session),
 ):
-    if not await session.get(Shim, shim_id):
+    shim = await session.get(Shim, shim_id)
+    if not shim:
         raise HTTPException(status_code=404, detail="Shim not found")
+
+    cfg = _app_config.get()
+    retention_days = (
+        shim.log_retention_days
+        if shim.log_retention_days is not None
+        else cfg.log_retention_days
+    )
+
+    query = select(WebhookLog).where(WebhookLog.shim_id == shim_id)
+    if retention_days > 0:
+        cutoff = _now() - timedelta(days=retention_days)
+        query = query.where(WebhookLog.received_at >= cutoff)
+
     return (
         await session.exec(
-            select(WebhookLog)
-            .where(WebhookLog.shim_id == shim_id)
-            .order_by(WebhookLog.received_at.desc())
-            .offset(offset)
-            .limit(limit)
+            query.order_by(WebhookLog.received_at.desc()).offset(offset).limit(limit)
         )
     ).all()
 

@@ -13,6 +13,9 @@ from app.db.models import (
     RuleOperator,
     SignatureAlgorithm,
     WebhookLog,
+    AppConfig,
+    AppConfigRead,
+    AppConfigUpdate,
 )
 from app.db.engine import engine, init_db, get_session, AsyncSessionLocal
 
@@ -30,6 +33,9 @@ __all__ = [
     "RuleOperator",
     "SignatureAlgorithm",
     "WebhookLog",
+    "AppConfig",
+    "AppConfigRead",
+    "AppConfigUpdate",
     "engine",
     "init_db",
     "get_session",

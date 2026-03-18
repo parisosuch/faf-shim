@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional
@@ -29,6 +30,11 @@ class ShimBase(SQLModel):
     signature_algorithm: Optional[SignatureAlgorithm] = None
     body_template: Optional[str] = None
     sample_payload: Optional[str] = None
+    # Per-shim config overrides (None = use global AppConfig default)
+    max_body_size_kb: Optional[int] = None
+    log_retention_days: Optional[int] = None
+    rate_limit_requests: Optional[int] = None
+    rate_limit_window_seconds: Optional[int] = None
 
 
 class Shim(ShimBase, table=True):
@@ -51,6 +57,10 @@ class ShimUpdate(SQLModel):
     signature_algorithm: Optional[SignatureAlgorithm] = None
     body_template: Optional[str] = None
     sample_payload: Optional[str] = None
+    max_body_size_kb: Optional[int] = None
+    log_retention_days: Optional[int] = None
+    rate_limit_requests: Optional[int] = None
+    rate_limit_window_seconds: Optional[int] = None
 
 
 class ShimVariable(SQLModel, table=True):
@@ -118,3 +128,32 @@ class WebhookLog(SQLModel, table=True):
     target_url: Optional[str] = None  # where the payload was forwarded
     status: Optional[int] = None  # HTTP status returned by target
     error: Optional[str] = None
+
+
+class AppConfig(SQLModel, table=True):
+    __tablename__ = "app_config"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    cors_origins: str = Field(default='["*"]')  # JSON array of allowed origins
+    log_retention_days: int = Field(default=30)  # 0 = keep forever
+    max_body_size_kb: int = Field(default=1024)  # global default body size limit
+    cleanup_interval_seconds: int = Field(
+        default=3600
+    )  # how often the cleanup task runs
+
+    def cors_origins_list(self) -> list[str]:
+        return json.loads(self.cors_origins)
+
+
+class AppConfigRead(SQLModel):
+    cors_origins: list[str]
+    log_retention_days: int
+    max_body_size_kb: int
+    cleanup_interval_seconds: int
+
+
+class AppConfigUpdate(SQLModel):
+    cors_origins: Optional[list[str]] = None
+    log_retention_days: Optional[int] = None
+    max_body_size_kb: Optional[int] = None
+    cleanup_interval_seconds: Optional[int] = None

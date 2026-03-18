@@ -2,6 +2,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, Request
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from app import app_config as _app_config
 from app import cache
 from app.db import get_session, Shim, ShimRule, ShimVariable, WebhookLog
 from app.forwarder import (
@@ -73,6 +74,17 @@ async def receive_webhook(
 ):
     body = await request.body()
 
+    # Global hard cap — checked before any DB/cache work
+    cfg = _app_config.get()
+    if len(body) > cfg.max_body_size_kb * 1024:
+        logger.warning(
+            "slug=%s body size %d bytes exceeds global limit %d KB — dropping",
+            slug,
+            len(body),
+            cfg.max_body_size_kb,
+        )
+        return _ACCEPTED
+
     # Lookup shim, rules, and variables — cache or DB
     cached = cache.get(slug)
     if cached:
@@ -102,6 +114,16 @@ async def receive_webhook(
             ).all()
         )
         cache.set(slug, shim, rules, variables)
+
+    # Per-shim body size override (must be ≤ global limit to have any effect)
+    if shim.max_body_size_kb is not None and len(body) > shim.max_body_size_kb * 1024:
+        logger.warning(
+            "slug=%s body size %d bytes exceeds shim limit %d KB — dropping",
+            slug,
+            len(body),
+            shim.max_body_size_kb,
+        )
+        return _ACCEPTED
 
     # Always return 200 — never reveal whether a slug exists or a signature failed
     if not verify_signature(shim, dict(request.headers), body):

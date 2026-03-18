@@ -82,6 +82,25 @@ If no secret is configured, the shim accepts all traffic. The `/in/{slug}` endpo
 ### Sample Payload
 The optional `sample_payload` field stores an example incoming payload for a shim. It has no effect on forwarding — it exists as a hint for UIs building template editors and autocomplete.
 
+### Configuration
+faf-shim stores application-wide settings in a `GET /config` / `PATCH /config` resource (auth required). These are persisted in the database and take effect immediately without a restart.
+
+| Field | Default | Description |
+|-------|---------|-------------|
+| `cors_origins` | `["*"]` | List of allowed CORS origins. Use `["*"]` to allow all. |
+| `log_retention_days` | `30` | How many days of webhook logs to keep. `0` = keep forever. |
+| `max_body_size_kb` | `1024` | Global hard cap on inbound request body size in KB. Requests over this limit are silently dropped. |
+| `cleanup_interval_seconds` | `3600` | How often the background cleanup task runs to delete expired logs. |
+
+Per-shim overrides can be set when creating or updating a shim:
+
+| Field | Description |
+|-------|-------------|
+| `max_body_size_kb` | Override the global body size limit for this shim (must be ≤ global to have any effect). |
+| `log_retention_days` | Override log retention for this shim. `0` = keep forever. |
+| `rate_limit_requests` | Max requests allowed per window (reserved for rate limiting, not yet enforced). |
+| `rate_limit_window_seconds` | Window size for rate limiting (reserved, not yet enforced). |
+
 ---
 
 ## Authentication
@@ -140,6 +159,13 @@ uv run python -c "import secrets; print(secrets.token_hex(32))"
 | `GET` | `/shims/{id}/logs/{log_id}` | Get a single log entry |
 | `GET` | `/shims/operators` | List valid rule operators |
 
+### Config
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/config/` | Get current application configuration |
+| `PATCH` | `/config/` | Update application configuration (partial updates supported) |
+
 ### System
 
 | Method | Path | Description |
@@ -196,7 +222,9 @@ uv run pytest tests/ -v
 
 ```
 app/
-├── main.py              # FastAPI app, lifespan, router registration
+├── main.py              # FastAPI app, lifespan, CORS middleware, router registration
+├── app_config.py        # In-memory singleton for AppConfig (avoids DB hit on hot paths)
+├── cleanup.py           # Background task that deletes expired webhook logs
 ├── auth.py              # JWT creation/validation, bcrypt password hashing
 ├── cache.py             # In-memory slug→(shim, rules, variables) cache
 ├── config.py            # Settings loaded from environment via pydantic-settings
@@ -208,12 +236,18 @@ app/
 │   └── models.py        # SQLModel table definitions and request/response schemas
 └── routers/
     ├── auth.py          # Login, session check, token refresh
+    ├── config.py        # GET/PATCH /config — application-wide settings
     ├── shims.py         # Shim, ShimRule, ShimVariable CRUD + test dry-run + logs
     └── webhooks.py      # Inbound webhook receiver (background forwarding)
 tests/
 ├── conftest.py          # In-memory async DB fixture, TestClient + auth setup
 ├── test_auth.py         # Login, session, refresh, protection tests
+├── test_body_size.py    # Global and per-shim body size limit enforcement tests
+├── test_cleanup.py      # Log cleanup task tests
+├── test_config.py       # GET/PATCH /config endpoint tests
+├── test_cors.py         # Dynamic CORS middleware tests
 ├── test_forwarder.py    # Rule evaluation, find_matching_rule, render_template unit tests
+├── test_log_retention.py # Global and per-shim log retention tests
 ├── test_logs.py         # Webhook log retrieval and pagination tests
 ├── test_rules.py        # ShimRule CRUD tests
 ├── test_shim_test.py    # Dry-run endpoint tests
