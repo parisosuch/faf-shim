@@ -5,7 +5,8 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app import app_config as _app_config
 from app.cleanup import delete_old_logs
-from app.db.models import Shim, WebhookLog, _now
+from app.db.models import Shim, WebhookLog
+from app.utils import now
 
 
 @pytest.fixture(autouse=True)
@@ -29,7 +30,7 @@ async def _make_shim(
 async def _make_log(session: AsyncSession, shim_id: int, days_ago: int) -> WebhookLog:
     log = WebhookLog(
         shim_id=shim_id,
-        received_at=_now() - timedelta(days=days_ago),
+        received_at=now() - timedelta(days=days_ago),
         payload="{}",
     )
     session.add(log)
