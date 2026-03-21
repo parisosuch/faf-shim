@@ -159,6 +159,18 @@ uv run python -c "import secrets; print(secrets.token_hex(32))"
 | `GET` | `/shims/{id}/logs/{log_id}` | Get a single log entry |
 | `GET` | `/shims/operators` | List valid rule operators |
 
+### Dead Letter Queue
+
+Failed forwards (non-2xx response or network error) are automatically written to a dead letter queue for inspection and replay.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/dlq/` | List all DLQ entries across all shims (paginated) |
+| `GET` | `/dlq/{shim_id}` | List DLQ entries for a specific shim (paginated) |
+| `POST` | `/dlq/{dlq_id}/replay` | Replay a failed forward using its original payload, target URL, and headers |
+
+Each DLQ entry includes the original payload, target URL, rendered headers, failure status/error, and replay history (`replayed_at`, `replay_status`, `replay_error`). Replaying updates the entry in place — repeated replays overwrite the previous replay result.
+
 ### Metrics
 
 | Method | Path | Description |
@@ -269,6 +281,7 @@ app/
 └── routers/
     ├── auth.py          # Login, session check, token refresh
     ├── config.py        # GET/PATCH /config — application-wide settings
+    ├── dlq.py           # Dead letter queue — list and replay failed forwards
     ├── metrics.py       # GET /metrics/ — aggregate stats and time-series buckets
     ├── shims.py         # Shim, ShimRule, ShimVariable CRUD + test dry-run + logs
     └── webhooks.py      # Inbound webhook receiver (background forwarding)
@@ -288,6 +301,7 @@ tests/
 ├── test_templates.py    # Body/header template rendering integration tests
 ├── test_updates.py      # PATCH shim and rule tests
 ├── test_variables.py    # ShimVariable CRUD and cache invalidation tests
+├── test_dlq.py          # Dead letter queue creation, listing, and replay tests
 ├── test_metrics.py      # Metrics endpoint and bucketing tests
 ├── test_rate_limit.py   # Rate limiting enforcement tests
 └── test_webhooks.py     # Inbound webhook + signature verification tests

@@ -7,7 +7,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from app import app_config as _app_config
 from app import cache
 from app import rate_limit
-from app.db import get_session, Shim, ShimRule, ShimVariable, WebhookLog
+from app.db import get_session, Shim, ShimRule, ShimVariable, WebhookLog, DeadLetter
 from app.forwarder import (
     find_matching_rule,
     forward,
@@ -52,6 +52,8 @@ async def _forward_and_log(
         await session.commit()
         return
 
+    import json
+
     t0 = time.monotonic()
     status_code, error = await forward(target_url, forward_body, shim_headers)
     duration_ms = int((time.monotonic() - t0) * 1000)
@@ -68,6 +70,24 @@ async def _forward_and_log(
         error=error,
     )
     session.add(log)
+    await session.flush()  # populate log.id before referencing it
+
+    failed = error is not None or (
+        status_code is not None and not (200 <= status_code < 300)
+    )
+    if failed:
+        logger.warning("slug=%s adding to dead letter queue", slug)
+        session.add(
+            DeadLetter(
+                shim_id=shim_id,
+                webhook_log_id=log.id,
+                payload=raw_body.decode(),
+                target_url=target_url,
+                headers=json.dumps(shim_headers),
+                status=status_code,
+                error=error,
+            )
+        )
     await session.commit()
 
 

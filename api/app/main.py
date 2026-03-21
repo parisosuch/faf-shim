@@ -13,6 +13,7 @@ from app.db import init_db, AsyncSessionLocal, AppConfig
 from app.logger import setup_logging, get_logger
 from app.routers import auth, shims, webhooks
 from app.routers import config as config_router
+from app.routers import dlq as dlq_router
 from app.routers import metrics as metrics_router
 
 logger = get_logger(__name__)
@@ -81,6 +82,7 @@ app.add_middleware(_DynamicCORSMiddleware)
 
 app.include_router(auth.router)
 app.include_router(config_router.router)
+app.include_router(dlq_router.router)
 app.include_router(metrics_router.router)
 app.include_router(shims.router)
 app.include_router(webhooks.router)

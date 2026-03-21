@@ -129,6 +129,23 @@ class WebhookLog(SQLModel, table=True):
     error: Optional[str] = None
 
 
+class DeadLetter(SQLModel, table=True):
+    __tablename__ = "dead_letter"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    shim_id: int = Field(foreign_key="shim.id", index=True)
+    webhook_log_id: Optional[int] = Field(default=None, foreign_key="webhook_log.id")
+    payload: str  # original request body
+    target_url: str
+    headers: str = Field(default="{}")  # rendered headers at time of failure
+    failed_at: datetime = Field(default_factory=now)
+    status: Optional[int] = None  # HTTP status (None = network error)
+    error: Optional[str] = None
+    replayed_at: Optional[datetime] = None
+    replay_status: Optional[int] = None
+    replay_error: Optional[str] = None
+
+
 class AppConfig(SQLModel, table=True):
     __tablename__ = "app_config"
 
