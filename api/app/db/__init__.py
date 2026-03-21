@@ -16,6 +16,7 @@ from app.db.models import (
     AppConfig,
     AppConfigRead,
     AppConfigUpdate,
+    DeadLetter,
 )
 from app.db.engine import engine, init_db, get_session, AsyncSessionLocal
 
@@ -36,6 +37,7 @@ __all__ = [
     "AppConfig",
     "AppConfigRead",
     "AppConfigUpdate",
+    "DeadLetter",
     "engine",
     "init_db",
     "get_session",
