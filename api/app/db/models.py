@@ -1,8 +1,10 @@
 import json
-from datetime import datetime, timezone
+from datetime import datetime
 from enum import Enum
 from typing import Optional
+
 from sqlmodel import Field, SQLModel
+from app.utils import now
 
 
 class RuleOperator(str, Enum):
@@ -14,10 +16,6 @@ class RuleOperator(str, Enum):
 class SignatureAlgorithm(str, Enum):
     token = "token"  # direct header value comparison
     sha256 = "sha256"  # HMAC-SHA256 of the request body
-
-
-def _now() -> datetime:
-    return datetime.now(timezone.utc)
 
 
 class ShimBase(SQLModel):
@@ -40,7 +38,7 @@ class ShimBase(SQLModel):
 class Shim(ShimBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     slug: str = Field(unique=True, index=True)
-    created_at: datetime = Field(default_factory=_now)
+    created_at: datetime = Field(default_factory=now)
 
 
 class ShimCreate(ShimBase):
@@ -123,7 +121,7 @@ class WebhookLog(SQLModel, table=True):
 
     id: Optional[int] = Field(default=None, primary_key=True)
     shim_id: int = Field(foreign_key="shim.id", index=True)
-    received_at: datetime = Field(default_factory=_now)
+    received_at: datetime = Field(default_factory=now)
     payload: str = Field(default="{}")  # raw JSON body
     target_url: Optional[str] = None  # where the payload was forwarded
     status: Optional[int] = None  # HTTP status returned by target

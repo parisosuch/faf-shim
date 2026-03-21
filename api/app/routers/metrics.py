@@ -5,11 +5,12 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import case, func
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
+from app.utils import now
 
 from app import cache
 from app.auth import require_auth
 from app.db import get_session
-from app.db.models import Shim, WebhookLog, _now
+from app.db.models import Shim, WebhookLog
 
 router = APIRouter(
     prefix="/metrics", tags=["metrics"], dependencies=[Depends(require_auth)]
@@ -44,8 +45,7 @@ async def get_metrics(
     range_: int = Query(default=30, alias="range", ge=1),
     session: AsyncSession = Depends(get_session),
 ):
-    now = _now()
-    cutoff = now - _CUTOFF_DELTA[bucket](range_)
+    cutoff = now() - _CUTOFF_DELTA[bucket](range_)
     strftime_fmt = _STRFTIME[bucket]
 
     # --- Aggregate totals per shim (all-time) ---

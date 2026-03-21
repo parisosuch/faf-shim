@@ -6,7 +6,8 @@ from fastapi.testclient import TestClient
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app import app_config as _app_config
-from app.db.models import WebhookLog, _now
+from app.db.models import WebhookLog
+from app.utils import now
 
 
 @pytest.fixture(autouse=True)
@@ -37,7 +38,7 @@ def _post_webhook(client: TestClient):
 async def _insert_old_log(session: AsyncSession, shim_id: int, days_ago: int) -> None:
     log = WebhookLog(
         shim_id=shim_id,
-        received_at=_now() - timedelta(days=days_ago),
+        received_at=now() - timedelta(days=days_ago),
         payload="{}",
         target_url="https://t.com",
         status=200,

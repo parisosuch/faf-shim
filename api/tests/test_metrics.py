@@ -5,7 +5,8 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.db.models import WebhookLog, _now
+from app.db.models import WebhookLog
+from app.utils import now
 
 
 # ---------------------------------------------------------------------------
@@ -40,7 +41,7 @@ async def _insert_log(
 ) -> None:
     log = WebhookLog(
         shim_id=shim_id,
-        received_at=_now() - timedelta(days=days_ago),
+        received_at=now() - timedelta(days=days_ago),
         payload="{}",
         target_url="https://t.com",
         status=status,

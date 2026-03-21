@@ -24,8 +24,8 @@ from app.db import (
     RuleOperator,
     WebhookLog,
 )
-from app.db.models import _now
 from app.forwarder import find_matching_rule, render_headers, render_template
+from app.utils import now
 
 router = APIRouter(
     prefix="/shims", tags=["shims"], dependencies=[Depends(require_auth)]
@@ -370,7 +370,7 @@ async def list_logs(
 
     query = select(WebhookLog).where(WebhookLog.shim_id == shim_id)
     if retention_days > 0:
-        cutoff = _now() - timedelta(days=retention_days)
+        cutoff = now() - timedelta(days=retention_days)
         query = query.where(WebhookLog.received_at >= cutoff)
 
     return (

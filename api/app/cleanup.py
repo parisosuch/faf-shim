@@ -7,10 +7,11 @@ from datetime import timedelta
 from sqlalchemy import delete
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
+from app.utils import now
 
 from app import app_config as _app_config
 from app.db import AsyncSessionLocal
-from app.db.models import Shim, WebhookLog, _now
+from app.db.models import Shim, WebhookLog
 from app.logger import get_logger
 
 logger = get_logger(__name__)
@@ -25,8 +26,6 @@ async def delete_old_logs(session: AsyncSession) -> int:
     """
     cfg = _app_config.get()
     global_retention = cfg.log_retention_days
-    now = _now()
-
     shims = (await session.exec(select(Shim.id, Shim.log_retention_days))).all()
 
     # Map retention_days -> [shim_ids]; skip retention=0 (keep forever).
@@ -38,7 +37,7 @@ async def delete_old_logs(session: AsyncSession) -> int:
 
     deleted = 0
     for retention_days, shim_ids in by_retention.items():
-        cutoff = now - timedelta(days=retention_days)
+        cutoff = now() - timedelta(days=retention_days)
         result = await session.exec(
             delete(WebhookLog)
             .where(WebhookLog.shim_id.in_(shim_ids))
