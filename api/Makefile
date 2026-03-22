@@ -16,7 +16,7 @@ dev:
 check: lint test
 
 hash-password:
-	@read -p "Password: " pw && uv run python -c "import bcrypt; print(bcrypt.hashpw(pw.encode(), bcrypt.gensalt()).decode())"
+	@read -p "Password: " pw && uv run python -c "import bcrypt, sys; print(bcrypt.hashpw(sys.argv[1].encode(), bcrypt.gensalt()).decode())" "$$pw"
 
 gen-secret:
 	uv run python -c "import secrets; print(secrets.token_hex(32))"
