@@ -247,8 +247,7 @@ Interactive API docs available at `/docs` when running locally.
 ```bash
 cp .env.example .env
 # Fill in ADMIN_PASSWORD_HASH and JWT_SECRET in .env
-uv sync
-uv run fastapi dev app/main.py
+make dev
 ```
 
 The SQLite database (`faf-shim.db`) is created automatically on first run with WAL mode enabled.
@@ -258,7 +257,15 @@ The SQLite database (`faf-shim.db`) is created automatically on first run with W
 Tests use an in-memory SQLite database — nothing touches the real `faf-shim.db`.
 
 ```bash
-uv run pytest tests/ -v
+make test
+```
+
+### Linting & Formatting
+
+```bash
+make lint    # ruff check
+make format  # ruff format
+make check   # lint + test
 ```
 
 ---
