@@ -1,11 +1,11 @@
-const BASE_URL = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:8000';
+const BASE_URL = import.meta.env.PUBLIC_API_URL ?? "http://localhost:8000";
 
 function getToken(): string | null {
-  if (typeof localStorage === 'undefined') return null;
-  return localStorage.getItem('token');
+  if (typeof localStorage === "undefined") return null;
+  return localStorage.getItem("token");
 }
 
-type RequestOptions = Omit<RequestInit, 'body'> & { body?: unknown };
+type RequestOptions = Omit<RequestInit, "body"> & { body?: unknown };
 
 export async function api<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const token = getToken();
@@ -14,7 +14,7 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
   const res = await fetch(`${BASE_URL}${path}`, {
     ...rest,
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
@@ -22,13 +22,13 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
   });
 
   if (res.status === 401) {
-    localStorage.removeItem('token');
-    window.location.href = '/login';
-    throw new Error('Unauthorized');
+    localStorage.removeItem("token");
+    window.location.href = "/login";
+    throw new Error("Unauthorized");
   }
 
   if (!res.ok) {
-    const text = await res.text().catch(() => '');
+    const text = await res.text().catch(() => "");
     throw new Error(text || `HTTP ${res.status}`);
   }
 
