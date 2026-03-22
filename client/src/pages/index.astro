@@ -1,18 +1,10 @@
 ---
-import '../styles/global.css';
+import BaseLayout from "../layouts/BaseLayout.astro";
 ---
 
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width" />
-    <title>faf-shim</title>
-  </head>
-  <body>
-    <script>
-      import { isAuthenticated } from '../lib/auth';
-      window.location.href = isAuthenticated() ? '/shims' : '/login';
-    </script>
-  </body>
-</html>
+<BaseLayout title="faf-shim">
+  <script>
+    import { isAuthenticated } from "../lib/auth";
+    window.location.href = isAuthenticated() ? "/shims" : "/login";
+  </script>
+</BaseLayout>
