@@ -71,10 +71,10 @@ jobs:
         run: bun install
 
       - name: Oxlint
-        run: bunx oxlint
+        run: bun run lint
 
       - name: Oxfmt check
-        run: bunx oxfmt --check
+        run: bun run format:check
 
       - name: Build
         run: bun run build
