@@ -13,7 +13,9 @@ export function clearToken(): void {
 
 export function isTokenExpired(token: string): boolean {
   try {
-    const payload = JSON.parse(atob(token.split(".")[1]));
+    const base64url = token.split(".")[1];
+    const base64 = base64url.replace(/-/g, "+").replace(/_/g, "/");
+    const payload = JSON.parse(atob(base64));
     return payload.exp * 1000 < Date.now();
   } catch {
     return true;

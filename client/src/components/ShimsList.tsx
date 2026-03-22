@@ -148,7 +148,7 @@ export default function ShimsList() {
                   </td>
                   <td>
                     <div className="flex gap-2 justify-end">
-                      <a href={`/shims/${shim.id}`} className="btn btn-ghost btn-xs">
+                      <a href={`/shims/detail?id=${shim.id}`} className="btn btn-ghost btn-xs">
                         View
                       </a>
                       <button
