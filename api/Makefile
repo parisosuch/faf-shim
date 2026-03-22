@@ -1,4 +1,4 @@
-.PHONY: test lint format check dev hash-password gen-secret
+.PHONY: test lint format check dev hash-password gen-secret seed
 
 test:
 	uv run pytest tests/ -v
@@ -20,3 +20,6 @@ hash-password:
 
 gen-secret:
 	uv run python -c "import secrets; print(secrets.token_hex(32))"
+
+seed:
+	uv run python seed.py
