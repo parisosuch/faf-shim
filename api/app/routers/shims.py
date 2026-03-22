@@ -15,7 +15,9 @@ from app.db import (
     ShimCreate,
     ShimRead,
     ShimUpdate,
+    ShimExport,
     ShimRule,
+    ShimRuleBase,
     ShimRuleCreate,
     ShimRuleUpdate,
     ShimVariable,
@@ -99,6 +101,46 @@ async def create_shim(body: ShimCreate, session: AsyncSession = Depends(get_sess
     await session.commit()
     await session.refresh(shim)
     return ShimRead(**shim.model_dump(), rules=[], variables=[])
+
+
+@router.post("/import", response_model=ShimRead, status_code=201)
+async def import_shim(body: ShimExport, session: AsyncSession = Depends(get_session)):
+    existing = (await session.exec(select(Shim).where(Shim.slug == body.slug))).first()
+    if existing:
+        raise HTTPException(status_code=409, detail="Slug already in use")
+    shim = Shim.model_validate(body)
+    session.add(shim)
+    await session.flush()
+    for rule_data in body.rules:
+        rule = ShimRule.model_validate(rule_data, update={"shim_id": shim.id})
+        session.add(rule)
+    for var_data in body.variables:
+        session.add(
+            ShimVariable(shim_id=shim.id, key=var_data.key, value=var_data.value)
+        )
+    await session.commit()
+    await session.refresh(shim)
+    return await _get_shim_read(shim.id, session)
+
+
+@router.get("/{shim_id}/export", response_model=ShimExport)
+async def export_shim(shim_id: int, session: AsyncSession = Depends(get_session)):
+    shim = await session.get(Shim, shim_id)
+    if not shim:
+        raise HTTPException(status_code=404, detail="Shim not found")
+    rules = (
+        await session.exec(
+            select(ShimRule).where(ShimRule.shim_id == shim_id).order_by(ShimRule.order)
+        )
+    ).all()
+    variables = (
+        await session.exec(select(ShimVariable).where(ShimVariable.shim_id == shim_id))
+    ).all()
+    return ShimExport(
+        **shim.model_dump(exclude={"id", "created_at"}),
+        rules=[ShimRuleBase(**r.model_dump(exclude={"id", "shim_id"})) for r in rules],
+        variables=[ShimVariableCreate(key=v.key, value=v.value) for v in variables],
+    )
 
 
 @router.get("/{shim_id}", response_model=ShimRead)
