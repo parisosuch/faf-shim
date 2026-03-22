@@ -157,6 +157,8 @@ uv run python -c "import secrets; print(secrets.token_hex(32))"
 | `POST` | `/shims/{id}/test` | Dry-run: evaluate rules and render templates against a sample payload |
 | `GET` | `/shims/{id}/logs` | Retrieve webhook logs (paginated) |
 | `GET` | `/shims/{id}/logs/{log_id}` | Get a single log entry |
+| `GET` | `/shims/{id}/export` | Export a shim as a portable JSON bundle (includes rules and variables, no DB-specific fields) |
+| `POST` | `/shims/import` | Create a shim from an exported bundle |
 | `GET` | `/shims/operators` | List valid rule operators |
 
 ### Dead Letter Queue
