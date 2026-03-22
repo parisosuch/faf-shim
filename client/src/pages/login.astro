@@ -1,0 +1,101 @@
+---
+import "../styles/global.css";
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Login — faf-shim</title>
+  </head>
+  <body class="bg-base-200 min-h-screen flex items-center justify-center">
+    <div class="card bg-base-100 shadow-md w-full max-w-sm">
+      <div class="card-body gap-4">
+        <h1 class="card-title text-2xl">faf-shim</h1>
+
+        <div id="error-alert" class="alert alert-error hidden">
+          <span id="error-msg"></span>
+        </div>
+
+        <form id="login-form" class="flex flex-col gap-3">
+          <label class="form-control">
+            <div class="label"><span class="label-text">Username</span></div>
+            <input
+              id="username"
+              type="text"
+              name="username"
+              autocomplete="username"
+              required
+              class="input input-bordered w-full"
+            />
+          </label>
+
+          <label class="form-control">
+            <div class="label"><span class="label-text">Password</span></div>
+            <input
+              id="password"
+              type="password"
+              name="password"
+              autocomplete="current-password"
+              required
+              class="input input-bordered w-full"
+            />
+          </label>
+
+          <button type="submit" id="submit-btn" class="btn btn-primary w-full mt-2">
+            Login
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      import { isAuthenticated, setToken } from "../lib/auth";
+
+      if (isAuthenticated()) {
+        window.location.href = "/shims";
+      }
+
+      const form = document.getElementById("login-form") as HTMLFormElement;
+      const submitBtn = document.getElementById("submit-btn") as HTMLButtonElement;
+      const errorAlert = document.getElementById("error-alert") as HTMLDivElement;
+      const errorMsg = document.getElementById("error-msg") as HTMLSpanElement;
+
+      const BASE_URL = import.meta.env.PUBLIC_API_URL ?? "http://localhost:8000";
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        errorAlert.classList.add("hidden");
+        submitBtn.classList.add("loading");
+        submitBtn.disabled = true;
+
+        const username = (document.getElementById("username") as HTMLInputElement).value;
+        const password = (document.getElementById("password") as HTMLInputElement).value;
+
+        try {
+          const res = await fetch(`${BASE_URL}/auth/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password }),
+          });
+
+          if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            throw new Error(data.detail ?? "Login failed");
+          }
+
+          const { access_token } = await res.json();
+          setToken(access_token);
+          window.location.href = "/shims";
+        } catch (err) {
+          errorMsg.textContent = err instanceof Error ? err.message : "Login failed";
+          errorAlert.classList.remove("hidden");
+        } finally {
+          submitBtn.classList.remove("loading");
+          submitBtn.disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>
