@@ -69,7 +69,7 @@ function ConfigSection({ shim, onSaved }: { shim: Shim; onSaved: () => void }) {
       {success && <div className="alert alert-success">Saved.</div>}
 
       <div className="grid grid-cols-2 gap-4">
-        <label className="form-control col-span-2 sm:col-span-1">
+        <label className="form-control flex flex-col col-span-2 sm:col-span-1">
           <div className="label">
             <span className="label-text">Name</span>
           </div>
@@ -81,7 +81,7 @@ function ConfigSection({ shim, onSaved }: { shim: Shim; onSaved: () => void }) {
             onChange={(e) => set("name", e.target.value)}
           />
         </label>
-        <label className="form-control col-span-2 sm:col-span-1">
+        <label className="form-control flex flex-col col-span-2 sm:col-span-1">
           <div className="label">
             <span className="label-text">Slug</span>
           </div>
@@ -95,7 +95,7 @@ function ConfigSection({ shim, onSaved }: { shim: Shim; onSaved: () => void }) {
         </label>
       </div>
 
-      <label className="form-control">
+      <label className="form-control flex flex-col">
         <div className="label">
           <span className="label-text">Target URL</span>
         </div>
@@ -108,7 +108,7 @@ function ConfigSection({ shim, onSaved }: { shim: Shim; onSaved: () => void }) {
         />
       </label>
 
-      <label className="form-control">
+      <label className="form-control flex flex-col">
         <div className="label">
           <span className="label-text">Headers (JSON)</span>
         </div>
@@ -121,7 +121,7 @@ function ConfigSection({ shim, onSaved }: { shim: Shim; onSaved: () => void }) {
       </label>
 
       <div className="grid grid-cols-2 gap-4">
-        <label className="form-control">
+        <label className="form-control flex flex-col">
           <div className="label">
             <span className="label-text">Secret</span>
           </div>
@@ -132,7 +132,7 @@ function ConfigSection({ shim, onSaved }: { shim: Shim; onSaved: () => void }) {
             onChange={(e) => set("secret", e.target.value)}
           />
         </label>
-        <label className="form-control">
+        <label className="form-control flex flex-col">
           <div className="label">
             <span className="label-text">Signature Header</span>
           </div>
@@ -145,7 +145,7 @@ function ConfigSection({ shim, onSaved }: { shim: Shim; onSaved: () => void }) {
         </label>
       </div>
 
-      <label className="form-control">
+      <label className="form-control flex flex-col">
         <div className="label">
           <span className="label-text">Signature Algorithm</span>
         </div>
@@ -160,7 +160,7 @@ function ConfigSection({ shim, onSaved }: { shim: Shim; onSaved: () => void }) {
         </select>
       </label>
 
-      <label className="form-control">
+      <label className="form-control flex flex-col">
         <div className="label">
           <span className="label-text">Body Template</span>
         </div>
@@ -172,7 +172,7 @@ function ConfigSection({ shim, onSaved }: { shim: Shim; onSaved: () => void }) {
         />
       </label>
 
-      <label className="form-control">
+      <label className="form-control flex flex-col">
         <div className="label">
           <span className="label-text">Sample Payload (JSON)</span>
         </div>
@@ -187,7 +187,7 @@ function ConfigSection({ shim, onSaved }: { shim: Shim; onSaved: () => void }) {
       <div className="divider text-sm">Per-shim overrides (leave blank to use global defaults)</div>
 
       <div className="grid grid-cols-2 gap-4">
-        <label className="form-control">
+        <label className="form-control flex flex-col">
           <div className="label">
             <span className="label-text">Max Body Size (KB)</span>
           </div>
@@ -199,7 +199,7 @@ function ConfigSection({ shim, onSaved }: { shim: Shim; onSaved: () => void }) {
             onChange={(e) => set("max_body_size_kb", e.target.value)}
           />
         </label>
-        <label className="form-control">
+        <label className="form-control flex flex-col">
           <div className="label">
             <span className="label-text">Log Retention (days)</span>
           </div>
@@ -211,7 +211,7 @@ function ConfigSection({ shim, onSaved }: { shim: Shim; onSaved: () => void }) {
             onChange={(e) => set("log_retention_days", e.target.value)}
           />
         </label>
-        <label className="form-control">
+        <label className="form-control flex flex-col">
           <div className="label">
             <span className="label-text">Rate Limit (requests)</span>
           </div>
@@ -223,7 +223,7 @@ function ConfigSection({ shim, onSaved }: { shim: Shim; onSaved: () => void }) {
             onChange={(e) => set("rate_limit_requests", e.target.value)}
           />
         </label>
-        <label className="form-control">
+        <label className="form-control flex flex-col">
           <div className="label">
             <span className="label-text">Rate Limit Window (seconds)</span>
           </div>
@@ -418,7 +418,7 @@ function RulesSection({ shim, onChanged }: { shim: Shim; onChanged: () => void }
           {error && <div className="alert alert-error mb-4">{error}</div>}
           <form onSubmit={handleSave} className="flex flex-col gap-3">
             <div className="grid grid-cols-2 gap-3">
-              <label className="form-control">
+              <label className="form-control flex flex-col">
                 <div className="label">
                   <span className="label-text">Field</span>
                 </div>
@@ -430,7 +430,7 @@ function RulesSection({ shim, onChanged }: { shim: Shim; onChanged: () => void }
                   onChange={(e) => setForm((f) => ({ ...f, field: e.target.value }))}
                 />
               </label>
-              <label className="form-control">
+              <label className="form-control flex flex-col">
                 <div className="label">
                   <span className="label-text">Operator</span>
                 </div>
@@ -445,7 +445,7 @@ function RulesSection({ shim, onChanged }: { shim: Shim; onChanged: () => void }
                 </select>
               </label>
             </div>
-            <label className="form-control">
+            <label className="form-control flex flex-col">
               <div className="label">
                 <span className="label-text">Value</span>
               </div>
@@ -457,7 +457,7 @@ function RulesSection({ shim, onChanged }: { shim: Shim; onChanged: () => void }
                 onChange={(e) => setForm((f) => ({ ...f, value: e.target.value }))}
               />
             </label>
-            <label className="form-control">
+            <label className="form-control flex flex-col">
               <div className="label">
                 <span className="label-text">Target URL</span>
               </div>
@@ -469,7 +469,7 @@ function RulesSection({ shim, onChanged }: { shim: Shim; onChanged: () => void }
                 onChange={(e) => setForm((f) => ({ ...f, target_url: e.target.value }))}
               />
             </label>
-            <label className="form-control">
+            <label className="form-control flex flex-col">
               <div className="label">
                 <span className="label-text">Body Template (optional)</span>
               </div>
@@ -480,7 +480,7 @@ function RulesSection({ shim, onChanged }: { shim: Shim; onChanged: () => void }
                 onChange={(e) => setForm((f) => ({ ...f, body_template: e.target.value }))}
               />
             </label>
-            <label className="form-control">
+            <label className="form-control flex flex-col">
               <div className="label">
                 <span className="label-text">Order</span>
               </div>
@@ -652,7 +652,7 @@ function VariablesSection({ shim, onChanged }: { shim: Shim; onChanged: () => vo
           </h3>
           {error && <div className="alert alert-error mb-4">{error}</div>}
           <form onSubmit={handleSave} className="flex flex-col gap-3">
-            <label className="form-control">
+            <label className="form-control flex flex-col">
               <div className="label">
                 <span className="label-text">Key</span>
               </div>
@@ -664,7 +664,7 @@ function VariablesSection({ shim, onChanged }: { shim: Shim; onChanged: () => vo
                 onChange={(e) => setForm((f) => ({ ...f, key: e.target.value }))}
               />
             </label>
-            <label className="form-control">
+            <label className="form-control flex flex-col">
               <div className="label">
                 <span className="label-text">Value</span>
               </div>
@@ -762,7 +762,7 @@ function TestSection({ shim }: { shim: Shim }) {
     <div className="flex flex-col gap-4 max-w-2xl">
       {error && <div className="alert alert-error">{error}</div>}
       <form onSubmit={handleTest} className="flex flex-col gap-3">
-        <label className="form-control">
+        <label className="form-control flex flex-col">
           <div className="label">
             <span className="label-text">Payload (JSON)</span>
           </div>
