@@ -116,6 +116,11 @@ class ShimRead(ShimBase):
     variables: list["ShimVariable"] = []
 
 
+class ShimExport(ShimBase):
+    rules: list[ShimRuleBase] = []
+    variables: list[ShimVariableCreate] = []
+
+
 class WebhookLog(SQLModel, table=True):
     __tablename__ = "webhook_log"
 
