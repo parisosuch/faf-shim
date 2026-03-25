@@ -174,11 +174,9 @@ export default function ShimsList() {
         <div className="modal-box">
           <h3 className="font-bold text-lg mb-4">New Shim</h3>
           {createError && <div className="alert alert-error mb-4">{createError}</div>}
-          <form onSubmit={handleCreate} className="flex flex-col gap-3">
-            <label className="form-control">
-              <div className="label">
-                <span className="label-text">Name</span>
-              </div>
+          <form onSubmit={handleCreate} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1">
+              <span className="text-sm font-medium">Name</span>
               <input
                 type="text"
                 className="input input-bordered"
@@ -186,11 +184,9 @@ export default function ShimsList() {
                 value={createForm.name}
                 onChange={(e) => setCreateForm((f) => ({ ...f, name: e.target.value }))}
               />
-            </label>
-            <label className="form-control">
-              <div className="label">
-                <span className="label-text">Slug</span>
-              </div>
+            </div>
+            <div className="flex flex-col gap-1">
+              <span className="text-sm font-medium">Slug</span>
               <input
                 type="text"
                 className="input input-bordered"
@@ -200,11 +196,9 @@ export default function ShimsList() {
                 value={createForm.slug}
                 onChange={(e) => setCreateForm((f) => ({ ...f, slug: e.target.value }))}
               />
-            </label>
-            <label className="form-control">
-              <div className="label">
-                <span className="label-text">Target URL</span>
-              </div>
+            </div>
+            <div className="flex flex-col gap-1">
+              <span className="text-sm font-medium">Target URL</span>
               <input
                 type="url"
                 className="input input-bordered"
@@ -212,7 +206,7 @@ export default function ShimsList() {
                 value={createForm.target_url}
                 onChange={(e) => setCreateForm((f) => ({ ...f, target_url: e.target.value }))}
               />
-            </label>
+            </div>
             <div className="modal-action mt-2">
               <button
                 type="button"
@@ -221,12 +215,8 @@ export default function ShimsList() {
               >
                 Cancel
               </button>
-              <button
-                type="submit"
-                className={`btn btn-primary${creating ? " loading" : ""}`}
-                disabled={creating}
-              >
-                Create
+              <button type="submit" className="btn btn-primary" disabled={creating}>
+                {creating ? <span className="loading loading-spinner loading-sm" /> : "Create"}
               </button>
             </div>
           </form>
@@ -247,12 +237,8 @@ export default function ShimsList() {
             <button className="btn btn-ghost" onClick={() => deleteModalRef.current?.close()}>
               Cancel
             </button>
-            <button
-              className={`btn btn-error${deleting ? " loading" : ""}`}
-              disabled={deleting}
-              onClick={handleDelete}
-            >
-              Delete
+            <button className="btn btn-error" disabled={deleting} onClick={handleDelete}>
+              {deleting ? <span className="loading loading-spinner loading-sm" /> : "Delete"}
             </button>
           </div>
         </div>
@@ -266,18 +252,16 @@ export default function ShimsList() {
         <div className="modal-box">
           <h3 className="font-bold text-lg mb-4">Import Shim</h3>
           {importError && <div className="alert alert-error mb-4">{importError}</div>}
-          <form onSubmit={handleImport} className="flex flex-col gap-3">
-            <label className="form-control">
-              <div className="label">
-                <span className="label-text">Paste exported JSON</span>
-              </div>
+          <form onSubmit={handleImport} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1">
+              <span className="text-sm font-medium">Paste exported JSON</span>
               <textarea
                 className="textarea textarea-bordered font-mono text-sm h-48"
                 required
                 value={importJson}
                 onChange={(e) => setImportJson(e.target.value)}
               />
-            </label>
+            </div>
             <div className="modal-action mt-2">
               <button
                 type="button"
@@ -286,12 +270,8 @@ export default function ShimsList() {
               >
                 Cancel
               </button>
-              <button
-                type="submit"
-                className={`btn btn-primary${importing ? " loading" : ""}`}
-                disabled={importing}
-              >
-                Import
+              <button type="submit" className="btn btn-primary" disabled={importing}>
+                {importing ? <span className="loading loading-spinner loading-sm" /> : "Import"}
               </button>
             </div>
           </form>
