@@ -1,10 +1,11 @@
+import os
 from collections.abc import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlmodel import SQLModel, text
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-DATABASE_URL = "sqlite+aiosqlite:///faf-shim.db"
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///faf-shim.db")
 
 engine = create_async_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 
