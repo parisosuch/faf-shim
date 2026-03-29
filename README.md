@@ -236,17 +236,61 @@ Interactive API docs available at `/docs` when running locally.
 
 ---
 
+## Deployment
+
+### Docker (recommended)
+
+```bash
+# 1. Copy and fill in credentials
+cp api/.env.example api/.env
+
+# Generate a password hash
+uv run python -c "import bcrypt; print(bcrypt.hashpw(b'yourpassword', bcrypt.gensalt()).decode())"
+
+# Generate a JWT secret
+uv run python -c "import secrets; print(secrets.token_hex(32))"
+
+# 2. Set your API URL (used at client build time)
+export PUBLIC_API_URL=http://your-api-domain:8000
+
+# 3. Build and run
+docker compose up --build
+```
+
+The client is served on port `80` and the API on port `8000` by default. Override with env vars:
+
+```bash
+API_PORT=9000 WEB_PORT=8080 docker compose up
+```
+
+SQLite data is persisted in a Docker volume (`db_data`).
+
+### Coolify
+
+Deploy as a Docker Compose application. Set the following environment variables in Coolify before deploying:
+
+| Variable | Description |
+|----------|-------------|
+| `ADMIN_PASSWORD_HASH` | bcrypt hash of your admin password (wrap in single quotes) |
+| `JWT_SECRET` | Long random string for signing JWTs |
+| `PUBLIC_API_URL` | Full URL of the API service as seen by browsers |
+
+Coolify handles routing via its Traefik proxy — assign a domain to each service (`web` and `api`) in the Coolify UI.
+
+---
+
 ## Development
 
 ### Requirements
-- Python 3.11+
+- Python 3.14+
 - [uv](https://github.com/astral-sh/uv)
+- Node 22+, [bun](https://bun.sh)
 
 ### Setup
 
 ```bash
-cp .env.example .env
-# Fill in ADMIN_PASSWORD_HASH and JWT_SECRET in .env
+cp api/.env.example api/.env
+# Fill in ADMIN_PASSWORD_HASH and JWT_SECRET in api/.env
 make dev
 ```
 
