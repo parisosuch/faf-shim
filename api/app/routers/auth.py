@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
-from app.auth import create_access_token, require_auth, verify_password
+from app.auth import create_access_token, get_password_hash, require_auth, verify_password
 from app.config import settings
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -22,7 +22,7 @@ class TokenResponse(BaseModel):
 @router.post("/login", response_model=TokenResponse)
 def login(body: LoginRequest):
     if body.username != settings.admin_username or not verify_password(
-        body.password, settings.admin_password_hash
+        body.password, get_password_hash()
     ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

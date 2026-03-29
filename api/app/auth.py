@@ -1,3 +1,4 @@
+import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
@@ -9,6 +10,33 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from app.config import settings
 
 _bearer = HTTPBearer()
+_password_hash: str = ""
+
+
+def init_password() -> str | None:
+    """Resolve the admin password hash at startup.
+
+    Priority:
+      1. ADMIN_PASSWORD_HASH (legacy, pre-hashed)
+      2. ADMIN_PASSWORD (plain text, hashed here)
+      3. Auto-generated random password (logged to stdout)
+
+    Returns the generated plain-text password if one was auto-generated, else None.
+    """
+    global _password_hash
+    if settings.admin_password_hash:
+        _password_hash = settings.admin_password_hash
+        return None
+    if settings.admin_password:
+        _password_hash = bcrypt.hashpw(settings.admin_password.encode(), bcrypt.gensalt()).decode()
+        return None
+    generated = secrets.token_urlsafe(24)
+    _password_hash = bcrypt.hashpw(generated.encode(), bcrypt.gensalt()).decode()
+    return generated
+
+
+def get_password_hash() -> str:
+    return _password_hash
 
 
 def verify_password(plain: str, hashed: str) -> bool:
