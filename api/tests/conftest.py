@@ -1,7 +1,5 @@
 import os
 
-# Must be set before app is imported so Settings() doesn't fail validation
-os.environ.setdefault("ADMIN_PASSWORD_HASH", "$2b$12$placeholder.hash.for.test.init")
 os.environ.setdefault(
     "JWT_SECRET", "test-secret-for-pytest-that-is-long-enough-for-hs256"
 )
@@ -16,7 +14,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from app.main import app
 from app.db import get_session
 from app import cache, rate_limit
-from app.auth import create_access_token, hash_password
+from app.auth import create_access_token, init_password
 from app.config import settings
 
 TEST_PASSWORD = "testpassword"
@@ -25,8 +23,10 @@ TEST_PASSWORD = "testpassword"
 @pytest.fixture(autouse=True, scope="session")
 def patch_settings():
     settings.admin_username = "admin"
-    settings.admin_password_hash = hash_password(TEST_PASSWORD)
+    settings.admin_password = TEST_PASSWORD
+    settings.admin_password_hash = None
     settings.jwt_secret = "test-secret-for-pytest-that-is-long-enough-for-hs256"
+    init_password()
 
 
 @pytest.fixture(name="session")

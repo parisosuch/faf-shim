@@ -107,17 +107,14 @@ Per-shim overrides can be set when creating or updating a shim:
 
 faf-shim uses JWT bearer tokens. All `/shims/*` management endpoints require authentication. The `/in/{slug}` inbound endpoint and `/health` are public.
 
-Credentials are configured via environment variables. See `.env.example` for setup instructions.
+Credentials are configured via environment variables. See `api/.env.example` for setup instructions.
 
-### Generating credentials
-
-```bash
-# Hash a password
-uv run python -c "import bcrypt; print(bcrypt.hashpw(b'yourpassword', bcrypt.gensalt()).decode())"
-
-# Generate a JWT secret
-uv run python -c "import secrets; print(secrets.token_hex(32))"
-```
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `ADMIN_PASSWORD` | Recommended | Plain text password — hashed in memory at startup. If not set, a random password is generated and printed to the logs. |
+| `ADMIN_USERNAME` | No | Defaults to `admin`. |
+| `JWT_SECRET` | Recommended | Long random string for signing tokens. If not set, a random secret is generated each startup (all sessions invalidated on restart). |
+| `JWT_EXPIRE_MINUTES` | No | Token lifetime in minutes. Defaults to `60`. |
 
 ---
 
@@ -271,7 +268,7 @@ Deploy as a Docker Compose application. Set the following environment variables 
 
 | Variable | Description |
 |----------|-------------|
-| `ADMIN_PASSWORD_HASH` | bcrypt hash of your admin password (wrap in single quotes) |
+| `ADMIN_PASSWORD` | Your admin password in plain text |
 | `JWT_SECRET` | Long random string for signing JWTs |
 | `PUBLIC_API_URL` | Full URL of the API service as seen by browsers |
 
@@ -290,7 +287,7 @@ Coolify handles routing via its Traefik proxy — assign a domain to each servic
 
 ```bash
 cp api/.env.example api/.env
-# Fill in ADMIN_PASSWORD_HASH and JWT_SECRET in api/.env
+# Fill in ADMIN_PASSWORD and JWT_SECRET in api/.env
 make dev
 ```
 

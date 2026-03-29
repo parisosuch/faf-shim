@@ -8,6 +8,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 from app import app_config as _app_config
+from app.auth import init_password
 from app.cleanup import start_cleanup_loop
 from app.db import init_db, AsyncSessionLocal, AppConfig
 from app.logger import setup_logging, get_logger
@@ -50,6 +51,13 @@ class _DynamicCORSMiddleware(BaseHTTPMiddleware):
 async def lifespan(_app: FastAPI):
     setup_logging()
     logger.info("faf-shim starting up")
+    generated_password = init_password()
+    if generated_password:
+        logger.warning("=" * 60)
+        logger.warning("No ADMIN_PASSWORD set — generated a random password:")
+        logger.warning(f"  ADMIN_PASSWORD={generated_password}")
+        logger.warning("Set this as an environment variable to persist it.")
+        logger.warning("=" * 60)
     await init_db()
     logger.info("database initialised")
     async with AsyncSessionLocal() as session:
