@@ -28,7 +28,9 @@ def init_password() -> str | None:
         _password_hash = settings.admin_password_hash
         return None
     if settings.admin_password:
-        _password_hash = bcrypt.hashpw(settings.admin_password.encode(), bcrypt.gensalt()).decode()
+        _password_hash = bcrypt.hashpw(
+            settings.admin_password.encode(), bcrypt.gensalt()
+        ).decode()
         return None
     generated = secrets.token_urlsafe(24)
     _password_hash = bcrypt.hashpw(generated.encode(), bcrypt.gensalt()).decode()

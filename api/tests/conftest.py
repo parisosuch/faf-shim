@@ -1,6 +1,8 @@
 import os
 
-os.environ.setdefault("JWT_SECRET", "test-secret-for-pytest-that-is-long-enough-for-hs256")
+os.environ.setdefault(
+    "JWT_SECRET", "test-secret-for-pytest-that-is-long-enough-for-hs256"
+)
 
 import pytest
 from fastapi.testclient import TestClient
