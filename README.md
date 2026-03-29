@@ -241,12 +241,6 @@ Interactive API docs available at `/docs` when running locally.
 # 1. Copy and fill in credentials
 cp api/.env.example api/.env
 
-# Generate a password hash
-uv run python -c "import bcrypt; print(bcrypt.hashpw(b'yourpassword', bcrypt.gensalt()).decode())"
-
-# Generate a JWT secret
-uv run python -c "import secrets; print(secrets.token_hex(32))"
-
 # 2. Set your API URL (used at client build time)
 export PUBLIC_API_URL=http://your-api-domain:8000
 
@@ -254,7 +248,7 @@ export PUBLIC_API_URL=http://your-api-domain:8000
 docker compose up --build
 ```
 
-The client is served on port `80` and the API on port `8000` by default. Override with env vars:
+`docker-compose.override.yml` is included and binds the API to port `8000` and the web to port `80` by default for local use. Override with env vars:
 
 ```bash
 API_PORT=9000 WEB_PORT=8080 docker compose up
