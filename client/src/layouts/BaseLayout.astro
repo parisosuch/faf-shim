@@ -8,12 +8,28 @@ interface Props {
 const { title } = Astro.props;
 ---
 
-<html lang="en" data-theme="coffee">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width" />
     <title>{title} — faf-shim</title>
+    <script is:inline>
+      (function () {
+        var pref = localStorage.getItem("theme") || "system";
+        var theme;
+        if (pref === "dark") {
+          theme = "coffee";
+        } else if (pref === "light") {
+          theme = "caramellatte";
+        } else {
+          theme = window.matchMedia("(prefers-color-scheme: dark)").matches
+            ? "coffee"
+            : "caramellatte";
+        }
+        document.documentElement.setAttribute("data-theme", theme);
+      })();
+    </script>
   </head>
   <body>
     <slot />

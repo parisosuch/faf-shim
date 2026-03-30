@@ -50,7 +50,27 @@ const { title } = Astro.props;
           <li><a href="/dlq">Dead Letter Queue</a></li>
           <li><a href="/config">Config</a></li>
         </ul>
-        <div class="p-2 border-t border-base-200">
+        <div class="p-2 border-t border-base-200 flex flex-col gap-2">
+          <div class="flex items-center justify-between px-1">
+            <span class="text-xs text-base-content/60">Theme</span>
+            <div class="join">
+              <button id="theme-light" class="join-item btn btn-xs btn-ghost" title="Light">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m8.66-9h-1M4.34 12h-1m15.07-6.07-.71.71M6.34 17.66l-.71.71m12.73 0-.71-.71M6.34 6.34l-.71-.71M12 7a5 5 0 1 0 0 10A5 5 0 0 0 12 7z" />
+                </svg>
+              </button>
+              <button id="theme-system" class="join-item btn btn-xs btn-ghost" title="System">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 17h6M3 7h18a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z" />
+                </svg>
+              </button>
+              <button id="theme-dark" class="join-item btn btn-xs btn-ghost" title="Dark">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                </svg>
+              </button>
+            </div>
+          </div>
           <button id="logout-btn" class="btn btn-ghost btn-sm w-full justify-start"
             >Logout</button
           >
@@ -67,5 +87,45 @@ const { title } = Astro.props;
       clearToken();
       window.location.href = "/login";
     });
+
+    function getResolvedTheme(pref: string): string {
+      if (pref === "dark") return "coffee";
+      if (pref === "light") return "caramellatte";
+      return window.matchMedia("(prefers-color-scheme: dark)").matches
+        ? "coffee"
+        : "caramellatte";
+    }
+
+    function applyTheme(pref: string) {
+      localStorage.setItem("theme", pref);
+      document.documentElement.setAttribute("data-theme", getResolvedTheme(pref));
+      updateButtons(pref);
+    }
+
+    function updateButtons(pref: string) {
+      for (const t of ["light", "system", "dark"]) {
+        document
+          .getElementById(`theme-${t}`)
+          ?.classList.toggle("btn-active", t === pref);
+      }
+    }
+
+    const currentPref = localStorage.getItem("theme") || "system";
+    updateButtons(currentPref);
+
+    document.getElementById("theme-light")?.addEventListener("click", () => applyTheme("light"));
+    document.getElementById("theme-system")?.addEventListener("click", () => applyTheme("system"));
+    document.getElementById("theme-dark")?.addEventListener("click", () => applyTheme("dark"));
+
+    window
+      .matchMedia("(prefers-color-scheme: dark)")
+      .addEventListener("change", () => {
+        if ((localStorage.getItem("theme") || "system") === "system") {
+          document.documentElement.setAttribute(
+            "data-theme",
+            getResolvedTheme("system")
+          );
+        }
+      });
   </script>
 </BaseLayout>
