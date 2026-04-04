@@ -5,6 +5,7 @@ Revises: 001
 Create Date: 2026-04-03
 
 """
+
 from typing import Sequence, Union
 
 import sqlalchemy as sa
@@ -23,7 +24,9 @@ def upgrade() -> None:
     cols = [c["name"] for c in inspect(bind).get_columns("webhook_log")]
     if "forwarded_payload" not in cols:
         with op.batch_alter_table("webhook_log") as batch_op:
-            batch_op.add_column(sa.Column("forwarded_payload", sa.Text(), nullable=True))
+            batch_op.add_column(
+                sa.Column("forwarded_payload", sa.Text(), nullable=True)
+            )
 
 
 def downgrade() -> None:
