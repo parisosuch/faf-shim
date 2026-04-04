@@ -82,6 +82,8 @@ async def forward(
     try:
         async with httpx.AsyncClient() as client:
             r = await client.post(target_url, content=body, headers=headers, timeout=10)
+            if not (200 <= r.status_code < 300):
+                return r.status_code, r.text
             return r.status_code, None
     except Exception as e:
         return None, str(e)
