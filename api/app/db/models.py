@@ -128,6 +128,7 @@ class WebhookLog(SQLModel, table=True):
     shim_id: int = Field(foreign_key="shim.id", index=True)
     received_at: datetime = Field(default_factory=now)
     payload: str = Field(default="{}")  # raw JSON body
+    forwarded_payload: Optional[str] = None  # rendered body sent to target
     target_url: Optional[str] = None  # where the payload was forwarded
     status: Optional[int] = None  # HTTP status returned by target
     duration_ms: Optional[int] = None  # forward round-trip time in milliseconds
