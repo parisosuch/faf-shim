@@ -162,9 +162,7 @@ export default function ShimLogs() {
                         </div>
                         {log.error && (
                           <div>
-                            <div className="text-xs font-semibold mb-2 text-error/70">
-                              Error
-                            </div>
+                            <div className="text-xs font-semibold mb-2 text-error/70">Error</div>
                             <pre className="text-xs font-mono overflow-x-auto whitespace-pre-wrap break-all text-error">
                               {log.error}
                             </pre>
