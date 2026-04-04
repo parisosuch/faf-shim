@@ -145,19 +145,29 @@ export default function ShimLogs() {
                   </tr>
                   {expandedId === log.id && (
                     <tr key={`${log.id}-expanded`} className="bg-base-200">
-                      <td colSpan={6} className="p-4">
-                        <div className="text-xs font-semibold mb-2 text-base-content/60">
-                          Payload
+                      <td colSpan={6} className="p-4 space-y-4">
+                        <div>
+                          <div className="text-xs font-semibold mb-2 text-base-content/60">
+                            Payload
+                          </div>
+                          <pre className="text-xs font-mono overflow-x-auto whitespace-pre-wrap break-all">
+                            {(() => {
+                              try {
+                                return JSON.stringify(JSON.parse(log.payload), null, 2);
+                              } catch {
+                                return log.payload;
+                              }
+                            })()}
+                          </pre>
                         </div>
-                        <pre className="text-xs font-mono overflow-x-auto whitespace-pre-wrap break-all">
-                          {(() => {
-                            try {
-                              return JSON.stringify(JSON.parse(log.payload), null, 2);
-                            } catch {
-                              return log.payload;
-                            }
-                          })()}
-                        </pre>
+                        {log.error && (
+                          <div>
+                            <div className="text-xs font-semibold mb-2 text-error/70">Error</div>
+                            <pre className="text-xs font-mono overflow-x-auto whitespace-pre-wrap break-all text-error">
+                              {log.error}
+                            </pre>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   )}
