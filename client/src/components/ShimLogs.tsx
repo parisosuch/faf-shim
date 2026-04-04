@@ -6,6 +6,7 @@ interface WebhookLog {
   shim_id: number;
   received_at: string;
   payload: string;
+  forwarded_payload: string | null;
   target_url: string | null;
   status: number | null;
   duration_ms: number | null;
@@ -148,7 +149,7 @@ export default function ShimLogs() {
                       <td colSpan={6} className="p-4 space-y-4">
                         <div>
                           <div className="text-xs font-semibold mb-2 text-base-content/60">
-                            Payload
+                            Incoming Payload
                           </div>
                           <pre className="text-xs font-mono overflow-x-auto whitespace-pre-wrap break-all">
                             {(() => {
@@ -160,6 +161,22 @@ export default function ShimLogs() {
                             })()}
                           </pre>
                         </div>
+                        {log.forwarded_payload && (
+                          <div>
+                            <div className="text-xs font-semibold mb-2 text-base-content/60">
+                              Outgoing Payload
+                            </div>
+                            <pre className="text-xs font-mono overflow-x-auto whitespace-pre-wrap break-all">
+                              {(() => {
+                                try {
+                                  return JSON.stringify(JSON.parse(log.forwarded_payload), null, 2);
+                                } catch {
+                                  return log.forwarded_payload;
+                                }
+                              })()}
+                            </pre>
+                          </div>
+                        )}
                         {log.error && (
                           <div>
                             <div className="text-xs font-semibold mb-2 text-error/70">Error</div>

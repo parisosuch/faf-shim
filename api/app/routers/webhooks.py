@@ -44,6 +44,7 @@ async def _forward_and_log(
         log = WebhookLog(
             shim_id=shim_id,
             payload=raw_body.decode(),
+            forwarded_payload=None,
             target_url=target_url,
             status=None,
             error=pre_error,
@@ -64,6 +65,7 @@ async def _forward_and_log(
     log = WebhookLog(
         shim_id=shim_id,
         payload=raw_body.decode(),
+        forwarded_payload=forward_body.decode() if forward_body else None,
         target_url=target_url,
         status=status_code,
         duration_ms=duration_ms,

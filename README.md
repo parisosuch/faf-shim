@@ -256,6 +256,8 @@ API_PORT=9000 WEB_PORT=8080 docker compose up
 
 SQLite data is persisted in a Docker volume (`db_data`).
 
+Database migrations run automatically on container startup via `alembic upgrade head` — no manual steps required for upgrades.
+
 ### Coolify
 
 Deploy as a Docker Compose application. Set the following environment variables in Coolify before deploying:
@@ -285,7 +287,17 @@ cp api/.env.example api/.env
 make dev
 ```
 
-The SQLite database (`faf-shim.db`) is created automatically on first run with WAL mode enabled.
+The SQLite database (`faf-shim.db`) is created and migrated automatically on first run. To run migrations manually:
+
+```bash
+cd api && uv run alembic upgrade head
+```
+
+To create a new migration after changing a model:
+
+```bash
+cd api && uv run alembic revision --autogenerate -m "describe your change"
+```
 
 ### Testing
 
@@ -308,6 +320,12 @@ make check   # lint + test
 ## Project Structure
 
 ```
+alembic/
+├── env.py               # Alembic environment — connects to SQLite, imports SQLModel metadata
+├── script.py.mako       # Template for generated migration files
+└── versions/
+    ├── 001_initial_schema.py      # Baseline — creates all tables (idempotent)
+    └── 002_add_forwarded_payload.py  # Adds forwarded_payload to webhook_log
 app/
 ├── main.py              # FastAPI app, lifespan, CORS middleware, router registration
 ├── app_config.py        # In-memory singleton for AppConfig (avoids DB hit on hot paths)
