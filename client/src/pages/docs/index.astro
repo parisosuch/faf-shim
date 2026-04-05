@@ -1,0 +1,188 @@
+---
+import AppLayout from "../../layouts/AppLayout.astro";
+---
+
+<AppLayout title="Docs">
+  <div class="max-w-3xl mx-auto flex flex-col gap-8">
+    <div>
+      <h1 class="text-3xl font-bold mb-2">Documentation</h1>
+      <p class="text-base-content/60 mb-2">faf-shim is a self-hostable webhook routing and transformation proxy. Incoming webhooks:</p>
+      <ul class="text-sm text-base-content/60 flex flex-col gap-1 list-disc list-inside">
+        <li>Hit <code class="kbd kbd-sm">/in/{"{slug}"}</code> on your host</li>
+        <li>Get matched against rules based on the request body</li>
+        <li>Are forwarded to the matching target URL, optionally with a transformed body</li>
+      </ul>
+    </div>
+
+    <!-- Quick Start -->
+    <section class="card bg-base-100 border border-base-300">
+      <div class="card-body gap-4">
+        <h2 class="card-title text-xl">Quick Start</h2>
+        <ol class="flex flex-col gap-3 list-none p-0">
+          {[
+            ["Create a shim", "Give it a name, a slug, and the target URL to forward webhooks to."],
+            ["Send a test webhook", <>POST a JSON body to <code class="kbd kbd-sm">/in/{"{"}{"{"}slug{"}"}{"}"}</code>. Check the shim's Logs tab to verify it was received and forwarded.</>],
+            ["Add rules", "Route different payloads to different destinations based on field values in the body."],
+            ["Add a body template", "Transform the outgoing payload using Jinja2. Use the Sample Payload + Preview Render to test without sending a real webhook."],
+            ["Store secrets as variables", "Keep API keys and tokens out of templates and logs by storing them as shim variables."],
+          ].map(([title, desc], i) => (
+            <li class="flex gap-3 items-start">
+              <span class="badge badge-primary badge-lg shrink-0 mt-0.5">{i + 1}</span>
+              <div>
+                <div class="font-semibold">{title}</div>
+                <div class="text-sm text-base-content/70 mt-0.5">{desc}</div>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+
+    <!-- Shims -->
+    <section class="flex flex-col gap-3">
+      <h2 class="text-xl font-bold">Shims</h2>
+      <p class="text-sm text-base-content/70">
+        A <strong>shim</strong> is the core routing unit. Each shim has a unique slug that forms
+        its webhook URL. Requests are forwarded to the shim's target URL, with optional headers
+        attached to every outgoing request.
+      </p>
+      <div class="mockup-code text-sm">
+        <pre><code>POST https://your-host/in/{"{slug}"}</code></pre>
+      </div>
+    </section>
+
+    <!-- Rules -->
+    <section class="flex flex-col gap-3">
+      <h2 class="text-xl font-bold">Rules</h2>
+      <p class="text-sm text-base-content/70">
+        Rules route different payloads to different targets. They're evaluated in order — the first
+        match wins. If no rule matches, the shim's default target URL is used. Nested fields use
+        dot notation: <code class="bg-base-200 px-1 rounded text-xs">repository.name</code>.
+      </p>
+      <div class="overflow-x-auto rounded-box border border-base-300">
+        <table class="table table-sm">
+          <thead>
+            <tr>
+              <th>Operator</th>
+              <th>Matches when…</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><code>==</code></td><td>field equals value exactly</td></tr>
+            <tr><td><code>!=</code></td><td>field does not equal value</td></tr>
+            <tr><td><code>contains</code></td><td>field contains value as a substring</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Body Templates -->
+    <section class="flex flex-col gap-3">
+      <h2 class="text-xl font-bold">Body Templates</h2>
+      <p class="text-sm text-base-content/70">
+        Body templates are <a href="https://jinja.palletsprojects.com" target="_blank" class="link">Jinja2</a>
+        templates that render the outgoing payload. Two context variables are available:
+      </p>
+      <div class="flex flex-col sm:flex-row gap-3">
+        <div class="card bg-base-200 flex-1">
+          <div class="card-body p-4 gap-1">
+            <div class="font-mono text-sm font-bold">payload</div>
+            <div class="text-xs text-base-content/60">The parsed incoming JSON body</div>
+          </div>
+        </div>
+        <div class="card bg-base-200 flex-1">
+          <div class="card-body p-4 gap-1">
+            <div class="font-mono text-sm font-bold">vars</div>
+            <div class="text-xs text-base-content/60">The shim's stored key/value variables</div>
+          </div>
+        </div>
+      </div>
+      <div class="border-l-4 border-warning bg-base-200 rounded-r-box px-4 py-3 text-sm text-base-content/80">
+        Always use <code class="bg-base-300 px-1 rounded text-xs">| tojson</code> when interpolating values — it quotes strings, serialises objects, and handles null/bool correctly.
+      </div>
+      <pre class="bg-neutral text-neutral-content rounded-box p-4 text-sm font-mono overflow-x-auto">{`{
+  "title": {{ payload.summary | tojson }},
+  "count": {{ payload.items | length | tojson }},
+  "api_key": {{ vars.MY_API_KEY | tojson }}
+}`}</pre>
+      <p class="text-sm text-base-content/70">
+        Rules can also have their own body template, which overrides the shim-level one when
+        the rule matches.
+      </p>
+    </section>
+
+    <!-- Variables -->
+    <section class="flex flex-col gap-3">
+      <h2 class="text-xl font-bold">Variables</h2>
+      <p class="text-sm text-base-content/70">
+        Variables are per-shim key/value pairs for secrets and config you don't want to
+        hard-code in templates. Reference them in any template as
+        <code class="bg-base-200 px-1 rounded text-xs">vars.KEY_NAME</code>.
+        Values are stored in the database, not in environment variables.
+      </p>
+    </section>
+
+    <!-- Signature Verification -->
+    <section class="flex flex-col gap-3">
+      <h2 class="text-xl font-bold">Signature Verification</h2>
+      <p class="text-sm text-base-content/70">
+        Set a <strong>secret</strong> and <strong>signature algorithm</strong> to verify that
+        incoming webhooks are genuine. Invalid signatures are rejected with
+        <code class="bg-base-200 px-1 rounded text-xs">403</code>.
+      </p>
+      <div class="overflow-x-auto rounded-box border border-base-300">
+        <table class="table table-sm">
+          <thead>
+            <tr>
+              <th>Algorithm</th>
+              <th>How it works</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>token</code></td>
+              <td class="text-sm">The Signature Header value is compared directly to the secret — use for simple bearer-token auth (e.g. <code>X-Webhook-Token</code>).</td>
+            </tr>
+            <tr>
+              <td><code>sha256</code></td>
+              <td class="text-sm">The Signature Header must contain an HMAC-SHA256 hex digest of the raw request body, signed with the secret.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- DLQ -->
+    <section class="flex flex-col gap-3">
+      <h2 class="text-xl font-bold">Dead Letter Queue</h2>
+      <p class="text-sm text-base-content/70">
+        When a forwarded request fails (non-2xx response or network error), the payload is saved
+        to the Dead Letter Queue. From the DLQ page you can inspect the failure and
+        <strong>replay</strong> it — resending the original payload to the target URL using the
+        headers rendered at the time of failure.
+      </p>
+    </section>
+
+    <!-- Per-shim overrides -->
+    <section class="flex flex-col gap-3">
+      <h2 class="text-xl font-bold">Per-shim Overrides</h2>
+      <p class="text-sm text-base-content/70">
+        These settings can be overridden per shim. Leave blank to use global defaults from the
+        Config page.
+      </p>
+      <div class="overflow-x-auto rounded-box border border-base-300">
+        <table class="table table-sm">
+          <thead>
+            <tr><th>Setting</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="font-medium">Max Body Size (KB)</td><td class="text-sm">Maximum accepted incoming payload size</td></tr>
+            <tr><td class="font-medium">Log Retention (days)</td><td class="text-sm">How long webhook logs are kept — <code>0</code> means forever</td></tr>
+            <tr><td class="font-medium">Rate Limit Requests</td><td class="text-sm">Max requests per window — exceeding this returns <code>429</code></td></tr>
+            <tr><td class="font-medium">Rate Limit Window (s)</td><td class="text-sm">The sliding window duration in seconds</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</AppLayout>
