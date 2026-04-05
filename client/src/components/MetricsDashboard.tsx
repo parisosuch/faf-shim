@@ -9,7 +9,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { api } from "../lib/api";
+import { api, parseUTC } from "../lib/api";
 
 interface BucketEntry {
   bucket: string;
@@ -53,18 +53,18 @@ function pad2(n: number) {
 }
 
 function formatBucketKey(date: Date, bucketType: Bucket): string {
-  const y = date.getFullYear();
-  const m = pad2(date.getMonth() + 1);
-  const d = pad2(date.getDate());
-  const h = pad2(date.getHours());
+  const y = date.getUTCFullYear();
+  const m = pad2(date.getUTCMonth() + 1);
+  const d = pad2(date.getUTCDate());
+  const h = pad2(date.getUTCHours());
   if (bucketType === "hour") return `${y}-${m}-${d} ${h}:00`;
   if (bucketType === "day") return `${y}-${m}-${d}`;
   if (bucketType === "month") return `${y}-${m}`;
   // week: Python's %Y-%W (Monday-based, week 0 = days before first Monday)
-  const jan1 = new Date(y, 0, 1);
+  const jan1 = new Date(Date.UTC(y, 0, 1));
   const weekNum = Math.floor(
     (date.getTime() - jan1.getTime()) / (7 * 24 * 60 * 60 * 1000) +
-      (jan1.getDay() === 0 ? 0 : (7 - jan1.getDay()) / 7),
+      (jan1.getUTCDay() === 0 ? 0 : (7 - jan1.getUTCDay()) / 7),
   );
   return `${y}-${pad2(weekNum)}`;
 }
@@ -77,10 +77,10 @@ function normalizeBuckets(raw: BucketEntry[], bucketType: Bucket, range: number)
 
   for (let i = range - 1; i >= 0; i--) {
     const d = new Date(now);
-    if (bucketType === "hour") d.setHours(d.getHours() - i, 0, 0, 0);
-    else if (bucketType === "day") d.setDate(d.getDate() - i);
-    else if (bucketType === "week") d.setDate(d.getDate() - i * 7);
-    else d.setMonth(d.getMonth() - i);
+    if (bucketType === "hour") d.setUTCHours(d.getUTCHours() - i, 0, 0, 0);
+    else if (bucketType === "day") d.setUTCDate(d.getUTCDate() - i);
+    else if (bucketType === "week") d.setUTCDate(d.getUTCDate() - i * 7);
+    else d.setUTCMonth(d.getUTCMonth() - i);
 
     const key = formatBucketKey(d, bucketType);
     buckets.push(
@@ -348,7 +348,7 @@ export default function MetricsDashboard() {
                       </td>
                       <td>{s.avg_duration_ms != null ? `${s.avg_duration_ms}ms` : "—"}</td>
                       <td className="text-sm text-base-content/60">
-                        {s.last_triggered_at ? new Date(s.last_triggered_at).toLocaleString() : "—"}
+                        {s.last_triggered_at ? parseUTC(s.last_triggered_at).toLocaleString() : "—"}
                       </td>
                     </tr>
                   ))}
