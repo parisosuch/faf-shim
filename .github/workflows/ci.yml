@@ -39,14 +39,8 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
-      - name: Ruff lint
-        run: uvx ruff check .
-
-      - name: Ruff format
-        run: uvx ruff format --check .
-
-      - name: Tests
-        run: uv run python -m pytest tests/ -v
+      - name: Check
+        run: make check
 
   client:
     needs: changes
