@@ -177,6 +177,53 @@ def test_replay_not_found(client: TestClient, auth_headers):
     assert r.status_code == 404
 
 
+# ---------------------------------------------------------------------------
+# Delete / Clear
+# ---------------------------------------------------------------------------
+
+
+def test_delete_dlq_entry(client: TestClient, auth_headers, shim):
+    _trigger(client, status=500)
+    entry = client.get(f"/dlq/{shim['id']}", headers=auth_headers).json()[0]
+
+    r = client.delete(f"/dlq/{entry['id']}", headers=auth_headers)
+    assert r.status_code == 204
+
+    entries = client.get(f"/dlq/{shim['id']}", headers=auth_headers).json()
+    assert all(e["id"] != entry["id"] for e in entries)
+
+
+def test_delete_dlq_entry_not_found(client: TestClient, auth_headers):
+    r = client.delete("/dlq/999", headers=auth_headers)
+    assert r.status_code == 404
+
+
+def test_delete_dlq_requires_auth(client: TestClient):
+    r = client.delete("/dlq/1")
+    assert r.status_code == 401
+
+
+def test_clear_dlq(client: TestClient, auth_headers, shim):
+    _trigger(client, status=500)
+    _trigger(client, status=502)
+    assert len(client.get("/dlq/", headers=auth_headers).json()) == 2
+
+    r = client.delete("/dlq/", headers=auth_headers)
+    assert r.status_code == 204
+
+    assert client.get("/dlq/", headers=auth_headers).json() == []
+
+
+def test_clear_dlq_requires_auth(client: TestClient):
+    r = client.delete("/dlq/")
+    assert r.status_code == 401
+
+
+def test_clear_dlq_empty_is_ok(client: TestClient, auth_headers):
+    r = client.delete("/dlq/", headers=auth_headers)
+    assert r.status_code == 204
+
+
 def test_dlq_entry_links_to_webhook_log(client: TestClient, auth_headers, shim):
     _trigger(client, status=500)
     entry = client.get(f"/dlq/{shim['id']}", headers=auth_headers).json()[0]

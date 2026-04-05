@@ -40,6 +40,8 @@ export default function DLQList() {
   const [offset, setOffset] = useState(0);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [replayingId, setReplayingId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [clearing, setClearing] = useState(false);
 
   async function loadData(off: number) {
     setLoading(true);
@@ -68,6 +70,33 @@ export default function DLQList() {
     loadData(newOffset);
   }
 
+  async function deleteEntry(id: number) {
+    setDeletingId(id);
+    try {
+      await api(`/dlq/${id}`, { method: "DELETE" });
+      setEntries((prev) => prev.filter((e) => e.id !== id));
+      if (expandedId === id) setExpandedId(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Delete failed");
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
+  async function clearAll() {
+    if (!confirm("Delete all dead letter entries? This cannot be undone.")) return;
+    setClearing(true);
+    try {
+      await api("/dlq/", { method: "DELETE" });
+      setEntries([]);
+      setExpandedId(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Clear failed");
+    } finally {
+      setClearing(false);
+    }
+  }
+
   async function replay(id: number) {
     setReplayingId(id);
     try {
@@ -93,9 +122,20 @@ export default function DLQList() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Dead Letter Queue</h1>
-        <button className="btn btn-ghost btn-sm" onClick={() => loadData(offset)}>
-          Refresh
-        </button>
+        <div className="flex gap-2">
+          {entries.length > 0 && (
+            <button
+              className="btn btn-error btn-sm btn-outline"
+              onClick={clearAll}
+              disabled={clearing}
+            >
+              {clearing ? <span className="loading loading-spinner loading-xs" /> : "Clear All"}
+            </button>
+          )}
+          <button className="btn btn-ghost btn-sm" onClick={() => loadData(offset)}>
+            Refresh
+          </button>
+        </div>
       </div>
 
       {error && <div className="alert alert-error mb-4">{error}</div>}
@@ -155,17 +195,30 @@ export default function DLQList() {
                       )}
                     </td>
                     <td onClick={(e) => e.stopPropagation()}>
-                      <button
-                        className="btn btn-xs btn-outline"
-                        disabled={replayingId === entry.id}
-                        onClick={() => replay(entry.id)}
-                      >
-                        {replayingId === entry.id ? (
-                          <span className="loading loading-spinner loading-xs" />
-                        ) : (
-                          "Replay"
-                        )}
-                      </button>
+                      <div className="flex gap-1">
+                        <button
+                          className="btn btn-xs btn-outline"
+                          disabled={replayingId === entry.id}
+                          onClick={() => replay(entry.id)}
+                        >
+                          {replayingId === entry.id ? (
+                            <span className="loading loading-spinner loading-xs" />
+                          ) : (
+                            "Replay"
+                          )}
+                        </button>
+                        <button
+                          className="btn btn-xs btn-error btn-outline"
+                          disabled={deletingId === entry.id}
+                          onClick={() => deleteEntry(entry.id)}
+                        >
+                          {deletingId === entry.id ? (
+                            <span className="loading loading-spinner loading-xs" />
+                          ) : (
+                            "Delete"
+                          )}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                   {expandedId === entry.id && (
