@@ -1,13 +1,11 @@
-FROM node:22-slim AS builder
+FROM oven/bun:1 AS builder
 
 WORKDIR /app
 
-# Install bun
-RUN npm install -g bun
-
-# Install dependencies (cached layer)
+# Install dependencies — cached layer, only re-runs when lockfile changes
 COPY package.json bun.lock ./
-RUN bun install --frozen-lockfile
+RUN --mount=type=cache,target=/root/.bun/install/cache \
+    bun install --frozen-lockfile
 
 # Copy source and build
 # PUBLIC_API_URL is baked in at build time — override via --build-arg

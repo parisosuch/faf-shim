@@ -3,6 +3,9 @@ import os
 os.environ.setdefault(
     "JWT_SECRET", "test-secret-for-pytest-that-is-long-enough-for-hs256"
 )
+# Use an in-memory DB for the app's global engine so parallel workers don't
+# race on the same faf-shim.db file when init_db() runs during TestClient startup.
+os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite://")
 
 import pytest
 from fastapi.testclient import TestClient
