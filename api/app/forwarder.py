@@ -6,6 +6,7 @@ from jinja2 import Environment, StrictUndefined
 from app.db.models import RuleOperator, ShimRule
 
 _env = Environment(undefined=StrictUndefined)
+_env.filters["tojson"] = json.dumps
 
 
 def _resolve_field(body: dict, path: str):
