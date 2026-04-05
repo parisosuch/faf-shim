@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.PUBLIC_API_URL ?? "http://localhost:8000";
+export const BASE_URL = import.meta.env.PUBLIC_API_URL ?? "http://localhost:8000";
 
 /**
  * Parse a UTC datetime string from the API. SQLite-backed timestamps may lack
