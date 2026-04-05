@@ -480,6 +480,17 @@ function RulesSection({ shim, onChanged }: { shim: Shim; onChanged: () => void }
             <label className="form-control flex flex-col">
               <div className="label">
                 <span className="label-text">Body Template (optional)</span>
+                {shim.body_template && (
+                  <button
+                    type="button"
+                    className="label-text-alt link link-hover text-base-content/50"
+                    onClick={() =>
+                      setForm((f) => ({ ...f, body_template: shim.body_template ?? "" }))
+                    }
+                  >
+                    use shim template
+                  </button>
+                )}
               </div>
               <textarea
                 className="textarea textarea-bordered font-mono text-sm"
