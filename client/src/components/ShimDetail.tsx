@@ -296,10 +296,15 @@ function RulesSection({ shim, onChanged }: { shim: Shim; onChanged: () => void }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
+    const target_url = form.target_url.trim() || shim.target_url;
+    if (!/^https?:\/\//i.test(target_url)) {
+      setError("Target URL must start with http:// or https://");
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
-      const body = { ...form, body_template: form.body_template || null };
+      const body = { ...form, target_url, body_template: form.body_template || null };
       if (editTarget) {
         await api(`/shims/${shim.id}/rules/${editTarget.id}`, { method: "PATCH", body });
       } else {
@@ -460,11 +465,14 @@ function RulesSection({ shim, onChanged }: { shim: Shim; onChanged: () => void }
             <label className="form-control flex flex-col">
               <div className="label">
                 <span className="label-text">Target URL</span>
+                <span className="label-text-alt text-base-content/50">
+                  leave blank to use shim default
+                </span>
               </div>
               <input
                 type="url"
                 className="input input-bordered input-sm"
-                required
+                placeholder={shim.target_url}
                 value={form.target_url}
                 onChange={(e) => setForm((f) => ({ ...f, target_url: e.target.value }))}
               />
