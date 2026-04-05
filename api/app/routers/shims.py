@@ -324,6 +324,41 @@ async def delete_variable(
 
 
 # ---------------------------------------------------------------------------
+# Template render (live preview while editing)
+# ---------------------------------------------------------------------------
+
+
+class RenderTemplateRequest(BaseModel):
+    template: str
+    payload: dict[str, Any] = {}
+
+
+class RenderTemplateResponse(BaseModel):
+    result: str | None = None
+    error: str | None = None
+
+
+@router.post("/{shim_id}/render-template", response_model=RenderTemplateResponse)
+async def render_shim_template(
+    shim_id: int,
+    body: RenderTemplateRequest,
+    session: AsyncSession = Depends(get_session),
+):
+    shim = await session.get(Shim, shim_id)
+    if not shim:
+        raise HTTPException(status_code=404, detail="Shim not found")
+    variables = (
+        await session.exec(select(ShimVariable).where(ShimVariable.shim_id == shim_id))
+    ).all()
+    vars_dict = {v.key: v.value for v in variables}
+    try:
+        result = render_template(body.template, body.payload, vars_dict).decode()
+        return RenderTemplateResponse(result=result)
+    except ValueError as e:
+        return RenderTemplateResponse(error=str(e))
+
+
+# ---------------------------------------------------------------------------
 # Test dry-run
 # ---------------------------------------------------------------------------
 

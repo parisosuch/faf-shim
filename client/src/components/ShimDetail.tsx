@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { api, BASE_URL } from "../lib/api";
 import type { Shim, ShimRule, ShimVariable } from "../lib/types";
+import CodeEditor from "./CodeEditor";
 
 // ---------------------------------------------------------------------------
 // Config section
@@ -25,9 +26,37 @@ function ConfigSection({ shim, onSaved }: { shim: Shim; onSaved: () => void }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [preview, setPreview] = useState<{ result?: string; error?: string } | null>(null);
+  const [previewing, setPreviewing] = useState(false);
 
   function set(key: string, value: string) {
     setForm((f) => ({ ...f, [key]: value }));
+  }
+
+  async function handlePreview() {
+    if (!form.body_template.trim()) return;
+    setPreviewing(true);
+    setPreview(null);
+    try {
+      let payload = {};
+      if (form.sample_payload.trim()) {
+        try {
+          payload = JSON.parse(form.sample_payload);
+        } catch {
+          setPreview({ error: "Sample payload is not valid JSON" });
+          return;
+        }
+      }
+      const res = await api<{ result?: string; error?: string }>(
+        `/shims/${shim.id}/render-template`,
+        { method: "POST", body: { template: form.body_template, payload } },
+      );
+      setPreview(res);
+    } catch (e) {
+      setPreview({ error: e instanceof Error ? e.message : "Preview failed" });
+    } finally {
+      setPreviewing(false);
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -108,17 +137,12 @@ function ConfigSection({ shim, onSaved }: { shim: Shim; onSaved: () => void }) {
         />
       </label>
 
-      <label className="form-control flex flex-col">
+      <div className="form-control flex flex-col gap-1">
         <div className="label">
           <span className="label-text">Headers (JSON)</span>
         </div>
-        <textarea
-          className="textarea textarea-bordered font-mono text-sm"
-          rows={3}
-          value={form.headers}
-          onChange={(e) => set("headers", e.target.value)}
-        />
-      </label>
+        <CodeEditor value={form.headers} onChange={(v) => set("headers", v)} minRows={3} />
+      </div>
 
       <div className="grid grid-cols-2 gap-4">
         <label className="form-control flex flex-col">
@@ -160,29 +184,48 @@ function ConfigSection({ shim, onSaved }: { shim: Shim; onSaved: () => void }) {
         </select>
       </label>
 
-      <label className="form-control flex flex-col">
+      <div className="form-control flex flex-col gap-1">
         <div className="label">
           <span className="label-text">Body Template</span>
         </div>
-        <textarea
-          className="textarea textarea-bordered font-mono text-sm"
-          rows={4}
+        <CodeEditor
           value={form.body_template}
-          onChange={(e) => set("body_template", e.target.value)}
+          onChange={(v) => set("body_template", v)}
+          mode="jinja-json"
+          minRows={4}
         />
-      </label>
+      </div>
 
-      <label className="form-control flex flex-col">
+      <div className="form-control flex flex-col gap-1">
         <div className="label">
           <span className="label-text">Sample Payload (JSON)</span>
         </div>
-        <textarea
-          className="textarea textarea-bordered font-mono text-sm"
-          rows={3}
+        <CodeEditor
           value={form.sample_payload}
-          onChange={(e) => set("sample_payload", e.target.value)}
+          onChange={(v) => set("sample_payload", v)}
+          minRows={3}
         />
-      </label>
+      </div>
+
+      {form.body_template.trim() && (
+        <div className="flex flex-col gap-2">
+          <button
+            type="button"
+            className="btn btn-outline btn-sm self-start"
+            onClick={handlePreview}
+            disabled={previewing}
+          >
+            {previewing ? "Rendering…" : "Preview render"}
+          </button>
+          {preview && (
+            <div
+              className={`rounded-lg p-3 font-mono text-xs whitespace-pre-wrap ${preview.error ? "bg-error/10 text-error" : "bg-base-200"}`}
+            >
+              {preview.error ?? preview.result}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="divider text-sm">Per-shim overrides (leave blank to use global defaults)</div>
 
@@ -477,7 +520,7 @@ function RulesSection({ shim, onChanged }: { shim: Shim; onChanged: () => void }
                 onChange={(e) => setForm((f) => ({ ...f, target_url: e.target.value }))}
               />
             </label>
-            <label className="form-control flex flex-col">
+            <div className="form-control flex flex-col">
               <div className="label">
                 <span className="label-text">Body Template (optional)</span>
                 {shim.body_template && (
@@ -492,13 +535,13 @@ function RulesSection({ shim, onChanged }: { shim: Shim; onChanged: () => void }
                   </button>
                 )}
               </div>
-              <textarea
-                className="textarea textarea-bordered font-mono text-sm"
-                rows={3}
+              <CodeEditor
                 value={form.body_template}
-                onChange={(e) => setForm((f) => ({ ...f, body_template: e.target.value }))}
+                onChange={(v) => setForm((f) => ({ ...f, body_template: v }))}
+                mode="jinja-json"
+                minRows={3}
               />
-            </label>
+            </div>
             <label className="form-control flex flex-col">
               <div className="label">
                 <span className="label-text">Order</span>
