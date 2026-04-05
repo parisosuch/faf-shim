@@ -1,7 +1,7 @@
 .PHONY: test lint format check dev hash-password gen-secret seed
 
 test:
-	uv run pytest tests/ -v
+	uv run pytest tests/ -v -n auto
 
 lint:
 	uvx ruff check
