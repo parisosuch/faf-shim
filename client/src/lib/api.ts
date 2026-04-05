@@ -1,5 +1,17 @@
 const BASE_URL = import.meta.env.PUBLIC_API_URL ?? "http://localhost:8000";
 
+/**
+ * Parse a UTC datetime string from the API. SQLite-backed timestamps may lack
+ * a timezone suffix, so we append "Z" when none is present so the browser
+ * treats them as UTC rather than local time.
+ */
+export function parseUTC(s: string): Date {
+  if (!s.endsWith("Z") && !/[+-]\d{2}:\d{2}$/.test(s)) {
+    return new Date(s + "Z");
+  }
+  return new Date(s);
+}
+
 function getToken(): string | null {
   if (typeof localStorage === "undefined") return null;
   return localStorage.getItem("token");
