@@ -40,7 +40,7 @@ jobs:
         run: uv sync
 
       - name: Check
-        run: make check -n auto
+        run: make check
 
   client:
     needs: changes
