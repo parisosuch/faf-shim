@@ -37,16 +37,18 @@ Template context:
 - `vars` — the shim's stored variables (see below)
 
 **Example** — transform a Coolify deployment event into a Beaver notification:
-```json
+```jinja2
 {
   "project": "Cove",
   "channel": "deployments",
-  "title": "{{ payload.resource.name }} deployment {{ payload.status }}",
-  "description": "{{ payload.message }}",
+  "title": {{ payload.status | tojson }},
+  "description": {{ payload.message | tojson }},
   "emoji": "🚀",
-  "api_key": "{{ vars.BEAVER_API_KEY }}"
+  "api_key": {{ vars.BEAVER_API_KEY | tojson }}
 }
 ```
+
+Use the `tojson` filter for any value interpolated into a JSON template — it handles quotes, newlines, and other special characters that would otherwise produce invalid JSON. Note that `tojson` includes the surrounding quotes, so omit the `"..."` around the expression.
 
 If the template references an undefined variable the forward is skipped, an error is written to the log, and the inbound caller still receives `200`.
 
@@ -58,7 +60,7 @@ Variables are returned as part of `GET /shims/{id}` and can be managed via the `
 ### Headers
 The `headers` field on a shim is a JSON object of static HTTP headers sent with every forwarded request. Header values are also rendered as Jinja2 templates, so API keys can be injected from variables:
 
-```json
+```jinja2
 {"Authorization": "Bearer {{ vars.TARGET_API_KEY }}"}
 ```
 
