@@ -942,9 +942,11 @@ export default function ShimDetail() {
         ))}
       </div>
 
-      {tab === "config" && <ConfigSection shim={shim} onSaved={loadShim} />}
-      {tab === "rules" && <RulesSection shim={shim} onChanged={loadShim} />}
-      {tab === "variables" && <VariablesSection shim={shim} onChanged={loadShim} />}
+      {tab === "config" && <ConfigSection shim={shim} onSaved={() => shimId && loadShim(shimId)} />}
+      {tab === "rules" && <RulesSection shim={shim} onChanged={() => shimId && loadShim(shimId)} />}
+      {tab === "variables" && (
+        <VariablesSection shim={shim} onChanged={() => shimId && loadShim(shimId)} />
+      )}
       {tab === "test" && <TestSection shim={shim} />}
     </>
   );
