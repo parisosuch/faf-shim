@@ -50,6 +50,23 @@ async def list_dlq_for_shim(
     ).all()
 
 
+@router.delete("/", status_code=204)
+async def clear_dlq(session: AsyncSession = Depends(get_session)):
+    entries = (await session.exec(select(DeadLetter))).all()
+    for entry in entries:
+        await session.delete(entry)
+    await session.commit()
+
+
+@router.delete("/{dlq_id}", status_code=204)
+async def delete_dlq_entry(dlq_id: int, session: AsyncSession = Depends(get_session)):
+    entry = await session.get(DeadLetter, dlq_id)
+    if not entry:
+        raise HTTPException(status_code=404, detail="Dead letter entry not found")
+    await session.delete(entry)
+    await session.commit()
+
+
 @router.post("/{dlq_id}/replay", response_model=DeadLetter)
 async def replay(
     dlq_id: int,
