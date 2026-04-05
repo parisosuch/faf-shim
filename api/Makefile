@@ -1,4 +1,4 @@
-.PHONY: test lint format check dev hash-password gen-secret seed
+.PHONY: test lint format format-check check dev hash-password gen-secret seed
 
 test:
 	uv run pytest tests/ -v -n auto
@@ -9,11 +9,14 @@ lint:
 format:
 	uvx ruff format
 
+format-check:
+	uvx ruff format --check
+
 dev:
 	uv sync
 	uv run uvicorn app.main:app --reload
 
-check: lint test
+check: lint format-check test
 
 hash-password:
 	@read -p "Password: " pw && uv run python -c "import bcrypt, sys; print(bcrypt.hashpw(sys.argv[1].encode(), bcrypt.gensalt()).decode())" "$$pw"
