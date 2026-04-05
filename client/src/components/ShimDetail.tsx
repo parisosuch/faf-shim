@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { api } from "../lib/api";
+import { api, BASE_URL } from "../lib/api";
 import type { Shim, ShimRule, ShimVariable } from "../lib/types";
 
 // ---------------------------------------------------------------------------
@@ -822,6 +822,30 @@ function TestSection({ shim }: { shim: Shim }) {
 }
 
 // ---------------------------------------------------------------------------
+// Shim URL copy
+// ---------------------------------------------------------------------------
+
+function ShimUrlCopy({ slug }: { slug: string }) {
+  const [copied, setCopied] = useState(false);
+  const url = `${BASE_URL}/in/${slug}`;
+
+  async function copy() {
+    await navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <div className="flex items-center gap-1 mt-1">
+      <code className="text-sm text-base-content/60">{url}</code>
+      <button className="btn btn-ghost btn-xs" onClick={copy} title="Copy webhook URL">
+        {copied ? "✓" : "Copy"}
+      </button>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Main component
 // ---------------------------------------------------------------------------
 
@@ -892,7 +916,7 @@ export default function ShimDetail() {
             /
           </div>
           <h1 className="text-2xl font-bold">{shim.name}</h1>
-          <code className="text-sm text-base-content/60">{shim.slug}</code>
+          <ShimUrlCopy slug={shim.slug} />
         </div>
         <div className="flex gap-2">
           <button className="btn btn-ghost btn-sm" onClick={handleExport}>
