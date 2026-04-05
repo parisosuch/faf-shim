@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { api } from "../lib/api";
+import { api, parseUTC } from "../lib/api";
 import type { Shim, ShimExport } from "../lib/types";
 
 export default function ShimsList() {
@@ -144,7 +144,7 @@ export default function ShimsList() {
                   </td>
                   <td className="max-w-xs truncate text-sm">{shim.target_url}</td>
                   <td className="text-sm text-base-content/60">
-                    {new Date(shim.created_at).toLocaleDateString()}
+                    {parseUTC(shim.created_at).toLocaleDateString()}
                   </td>
                   <td>
                     <div className="flex gap-2 justify-end">

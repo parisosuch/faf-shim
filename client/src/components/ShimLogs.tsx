@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api } from "../lib/api";
+import { api, parseUTC } from "../lib/api";
 
 interface WebhookLog {
   id: number;
@@ -130,7 +130,7 @@ export default function ShimLogs() {
                     onClick={() => setExpandedId(expandedId === log.id ? null : log.id)}
                   >
                     <td className="text-sm whitespace-nowrap">
-                      {new Date(log.received_at).toLocaleString()}
+                      {parseUTC(log.received_at).toLocaleString()}
                     </td>
                     <td>{statusBadge(log.status)}</td>
                     <td className="text-sm">

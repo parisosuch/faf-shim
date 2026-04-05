@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api } from "../lib/api";
+import { api, parseUTC } from "../lib/api";
 
 interface DeadLetter {
   id: number;
@@ -126,7 +126,7 @@ export default function DLQList() {
                     onClick={() => setExpandedId(expandedId === entry.id ? null : entry.id)}
                   >
                     <td className="text-sm whitespace-nowrap">
-                      {entry.failed_at ? new Date(entry.failed_at).toLocaleString() : "—"}
+                      {entry.failed_at ? parseUTC(entry.failed_at).toLocaleString() : "—"}
                     </td>
                     <td>
                       {shims.get(entry.shim_id) ? (
@@ -145,7 +145,7 @@ export default function DLQList() {
                     <td>{statusBadge(entry.status)}</td>
                     <td className="text-sm text-error truncate max-w-xs">{entry.error ?? "—"}</td>
                     <td className="text-sm whitespace-nowrap">
-                      {entry.replayed_at ? new Date(entry.replayed_at).toLocaleString() : "—"}
+                      {entry.replayed_at ? parseUTC(entry.replayed_at).toLocaleString() : "—"}
                     </td>
                     <td>
                       {entry.replayed_at ? (
